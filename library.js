@@ -276,6 +276,16 @@ function wordState(id) {
   return state;
 }
 
+function relativeTime(timestamp) {
+  if (!timestamp) return "—";
+  const minutes = Math.max(0, Math.ceil((timestamp - Date.now()) / 60000));
+  if (minutes <= 0) return "现在";
+  if (minutes < 60) return `${minutes} 分钟后`;
+  const hours = Math.ceil(minutes / 60);
+  if (hours < 24) return `${hours} 小时后`;
+  return `${Math.ceil(hours / 24)} 天后`;
+}
+
 function stageLabel(state) {
   if (!state) return "首次学习";
   if (state.mastered) return "长期掌握";
@@ -334,38 +344,41 @@ function results() {
   return filtered;
 }
 
+function detailBlock(label, value) {
+  return value ? `<div class="study-block"><b>${label}</b><p>${escapeHtml(value)}</p></div>` : "";
+}
+
 function studyCell(item) {
-  if (item.custom) {
-    const fields = [
-      ["雅思场景", item.scene],
-      ["常用搭配", item.collocation],
-      ["例句", item.example],
-      ["同义替换", item.synonyms],
-    ].filter(([, value]) => value);
-    return fields.length
-      ? `<details class="study-details"><summary>查看自定义学习内容</summary><div class="study-content">${fields.map(([label, value]) => `<div class="study-block"><b>${label}</b><p>${escapeHtml(value)}</p></div>`).join("")}</div></details>`
-      : '<span class="study-empty">暂无自定义学习内容</span>';
-  }
   const content = study[item.id];
   const point = window.ieltsPointsFor(item, content);
-  const examPoint = `<div class="ielts-point-summary"><b>${escapeHtml(point.topic)}</b><span>${escapeHtml(point.examUse)}</span><small>${escapeHtml(point.caution)}</small></div>`;
-  if (!content) return `${examPoint}<span class="study-empty">暂无雅思词汇书匹配内容</span>`;
-  if (content.type === "related") {
-    return `<details class="study-details"><summary>查看考点与关联内容</summary><div class="study-content">
-      ${examPoint}<span class="study-source">雅思词汇书第 ${content.pdfPage} 页</span>
-      <p>作为 <b>${escapeHtml(content.parent)}</b> 的派生词或相关词出现。</p>
-      <button type="button" class="study-speak-button" data-speak-text="${escapeHtml(content.parent)}"><span class="ui-icon icon-play" aria-hidden="true"></span>朗读关联词</button>
-    </div></details>`;
+  const usageContent = [
+    detailBlock("雅思场景", item.scene || point.topic),
+    detailBlock("阅读、写作与听力使用建议", point.examUse),
+    detailBlock("上下文辨义与拼写提醒", point.caution),
+    detailBlock("词族与同义替换建议", point.family),
+  ].filter(Boolean).join("");
+  const examples = item.example
+    ? [item.example]
+    : content?.examples || [];
+  const collocationContent = [
+    detailBlock("常用搭配", item.collocation),
+    examples.length ? `<div class="study-block"><b>例句</b>${examples.map((example) => `<div class="study-example"><p>${escapeHtml(example)}</p></div>`).join("")}</div>` : "",
+    detailBlock("同义替换", item.synonyms || content?.related?.join("、")),
+  ].filter(Boolean).join("");
+  let bookContent = '<span class="study-empty">暂无雅思词汇书匹配内容</span>';
+  if (content) {
+    bookContent = `<span class="study-source">雅思词汇书第 ${content.pdfPage} 页</span>`;
+    if (content.type === "related") {
+      bookContent += `<p>作为 <b>${escapeHtml(content.parent)}</b> 的派生词或相关词出现。</p>`;
+    } else {
+      bookContent += `<p>该单词已匹配雅思词汇书学习内容。</p>`;
+    }
   }
-  const examples = content.examples.length
-    ? `<div class="study-block"><b>例句</b>${content.examples.map((example) => `<div class="study-example"><p>${escapeHtml(example)}</p></div>`).join("")}</div>`
-    : '<div class="study-block"><b>例句</b><p>该词条未提取到清晰英文例句。</p></div>';
-  const related = content.related.length
-    ? `<div class="study-related"><b>派生／相关词</b><div class="answer-study-related">${content.related.map((word) => `<button type="button" class="study-related-word" data-speak-text="${escapeHtml(word)}">${escapeHtml(word)}<span class="ui-icon icon-play" aria-hidden="true"></span></button>`).join("")}</div></div>`
-    : "";
-  return `<details class="study-details"><summary>查看雅思考点与例句</summary><div class="study-content">
-    ${examPoint}<span class="study-source">雅思词汇书第 ${content.pdfPage} 页</span><button type="button" class="study-speak-button" data-speak-text="${escapeHtml(item.word)}"><span class="ui-icon icon-play" aria-hidden="true"></span>朗读单词</button>${examples}${related}
-  </div></details>`;
+  return `<div class="study-detail-list">
+    <details class="study-details"><summary>查看雅思用法</summary><div class="study-content">${usageContent || '<span class="study-empty">暂无雅思用法内容</span>'}</div></details>
+    <details class="study-details"><summary>查看搭配例句</summary><div class="study-content">${collocationContent || '<span class="study-empty">暂无搭配例句内容</span>'}</div></details>
+    <details class="study-details"><summary>查看雅思词汇书匹配</summary><div class="study-content">${bookContent}</div></details>
+  </div>`;
 }
 
 function render() {
@@ -385,9 +398,11 @@ function render() {
       <td><button class="word-speak" data-word="${escapeHtml(item.word)}">${escapeHtml(item.word)}<span class="ui-icon icon-play" aria-hidden="true"></span></button></td>
       <td><span class="cefr-badge ${window.wordCefrLevel(item) ? `level-${window.wordCefrLevel(item).toLowerCase()}` : "level-unmarked"}" title="剑桥词典不同释义可能对应多个 CEFR 等级">${window.wordCefrLabel(item)}</span></td>
       <td>${escapeHtml(item.meaning).replace(/\n/g, "<br>")}</td>
+      <td>${escapeHtml(window.ieltsPointsFor(item, study[item.id]).pos)}</td>
       <td>${studyCell(item)}</td>
       <td><span class="table-stage ${state?.mastered ? "mastered" : ""}">${stageLabel(state)}</span></td>
       <td><span class="${wrong ? "wrong-count" : "zero-count"}">${wrong}</span></td>
+      <td>${state?.nextReview ? relativeTime(state.nextReview) : "—"}</td>
       <td><a class="dictionary-link compact" href="https://dictionary.cambridge.org/dictionary/english-chinese-simplified/${encodeURIComponent(item.word)}" target="_blank" rel="noopener noreferrer"><span>英汉简体</span><i class="ui-icon icon-external" aria-hidden="true"></i></a></td>
       <td>${view === "deleted"
         ? `<button class="restore-word-button" type="button" data-restore-word="${item.id}">恢复显示</button>`
