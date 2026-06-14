@@ -156,7 +156,8 @@ input:focus, select:focus { border-color: var(--green); box-shadow: 0 0 0 3px rg
 .empty-orbit span { width: 60px; height: 60px; display: grid; place-items: center; border-radius: 50%; background: var(--green); color: var(--lime); font-size: 22px; }
 .empty-state h2, .result h2 { font-family: inherit; font-size: 32px; font-weight: 800; margin-bottom: 10px; }
 .empty-state p { color: var(--muted); line-height: 1.8; font-size: 13px; }
-.hidden { display: none !important; }
+.hidden,
+[hidden] { display: none !important; }
 .quiz { width: min(100%, 620px); align-self: stretch; display: flex; flex-direction: column; justify-content: center; }
 .quiz-topline { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 16px; color: var(--muted); font-size: 11px; letter-spacing: .1em; }
 .progress-track { height: 2px; background: var(--line); }
