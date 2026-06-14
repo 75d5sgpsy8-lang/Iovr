@@ -275,6 +275,9 @@ input:focus, select:focus { border-color: var(--green); box-shadow: 0 0 0 3px rg
 .study-details { min-width: 180px; }
 .study-details summary { color: var(--green); cursor: pointer; font-size: 10px; font-weight: 800; }
 .study-content { display: grid; gap: 9px; margin-top: 10px; padding: 12px; border-radius: 10px; background: rgba(220,233,221,.36); }
+.study-detail-list { display: grid; gap: 6px; }
+.study-detail-list .study-details { min-width: 0; }
+.study-detail-list .study-details summary { width: 100%; box-sizing: border-box; justify-content: center; }
 .study-source { color: var(--muted); font-size: 8px; font-weight: 700; letter-spacing: .08em; }
 .study-block, .study-related { display: grid; gap: 5px; }
 .study-block b, .study-related b { color: var(--green-deep); font-size: 9px; }
@@ -767,14 +770,16 @@ input, select { min-height: 47px; border-radius: 13px; border-color: rgba(16,73,
   min-height: 420px; border-color: rgba(16,73,48,.09); border-radius: 19px;
   background: rgba(255,255,255,.66); box-shadow: inset 0 1px rgba(255,255,255,.9);
 }
-.word-table { min-width: 1471px; table-layout: fixed; font-size: 11px; }
+.word-table { min-width: 1770px; table-layout: fixed; font-size: 11px; }
 .word-table .col-number { width: 76px; }
 .word-table .col-word { width: 170px; }
 .word-table .col-cefr { width: 150px; }
 .word-table .col-meaning { width: 270px; }
+.word-table .col-pos { width: 100px; }
 .word-table .col-study { width: 330px; }
 .word-table .col-stage { width: 170px; }
 .word-table .col-wrong { width: 82px; }
+.word-table .col-review { width: 120px; }
 .word-table .col-dictionary { width: 118px; }
 .word-table .col-action { width: 105px; }
 .word-table th { padding: 16px 13px; background: #eaf3eb; color: #315f48; white-space: nowrap; }
@@ -783,10 +788,13 @@ input, select { min-height: 47px; border-radius: 13px; border-color: rgba(16,73,
 .word-table th:nth-child(3), .word-table td:nth-child(3),
 .word-table th:nth-child(7), .word-table td:nth-child(7) { text-align: center; }
 .word-table th:nth-child(8), .word-table td:nth-child(8),
-.word-table th:nth-child(9), .word-table td:nth-child(9) { text-align: center; }
+.word-table th:nth-child(9), .word-table td:nth-child(9),
+.word-table th:nth-child(10), .word-table td:nth-child(10),
+.word-table th:nth-child(11), .word-table td:nth-child(11) { text-align: center; }
 .word-table td:nth-child(1), .word-table td:nth-child(3),
-.word-table td:nth-child(6), .word-table td:nth-child(7),
-.word-table td:nth-child(8), .word-table td:nth-child(9) { overflow-wrap: normal; }
+.word-table td:nth-child(5), .word-table td:nth-child(7),
+.word-table td:nth-child(8), .word-table td:nth-child(9),
+.word-table td:nth-child(10), .word-table td:nth-child(11) { overflow-wrap: normal; }
 .word-table .study-details { min-width: 0; }
 .word-table tr:hover td { background: rgba(223,236,226,.34); }
 .word-speak { font-size: 16px; letter-spacing: -.015em; }
@@ -1312,29 +1320,32 @@ footer { margin-top: 18px; }
   box-sizing: border-box;
 }
 .word-table {
-  width: calc(100% + 150px);
-  min-width: 1424px;
+  width: calc(100% + 380px);
+  min-width: 1770px;
 }
 .word-table .col-number { width: 64px; }
 .word-table .col-word { width: 145px; }
 .word-table .col-cefr { width: 130px; }
 .word-table .col-meaning { width: 240px; }
-.word-table .col-study { width: 280px; }
+.word-table .col-pos { width: 95px; }
+.word-table .col-study { width: 300px; }
 .word-table .col-stage { width: 145px; }
 .word-table .col-wrong { width: 70px; }
+.word-table .col-review { width: 110px; }
 .word-table .col-dictionary { width: 105px; }
 .word-table .col-action { width: 110px; }
-.word-table th:nth-child(9),
-.word-table td:nth-child(9) {
+.word-table th:nth-child(11),
+.word-table td:nth-child(11) {
   border-left: 1px solid var(--line);
   background: #fbfcfa;
 }
 .word-table td:nth-child(1),
 .word-table td:nth-child(3),
-.word-table td:nth-child(6),
 .word-table td:nth-child(7),
 .word-table td:nth-child(8),
-.word-table td:nth-child(9) {
+.word-table td:nth-child(9),
+.word-table td:nth-child(10),
+.word-table td:nth-child(11) {
   vertical-align: middle;
 }
 .word-speak {
