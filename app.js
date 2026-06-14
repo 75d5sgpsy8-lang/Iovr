@@ -493,8 +493,7 @@ function renderQuestion() {
   els.cefrBadge.parentElement.classList.add("hidden");
   els.meaning.textContent = item.meaning;
   els.currentDictionaryLink.href = `https://dictionary.cambridge.org/dictionary/english-chinese-simplified/${encodeURIComponent(item.word)}`;
-  els.currentDictionaryLink.classList.add("hidden");
-  els.currentDictionaryLink.hidden = true;
+  applyRecallState("idle");
   els.speakButton.classList.remove("hidden");
   els.speakButton.classList.remove("hint-used");
   els.speakButton.classList.remove("pronunciation-missing");
@@ -507,20 +506,31 @@ function renderQuestion() {
   els.checkButton.textContent = "校验答案";
   els.feedback.className = "feedback";
   els.feedback.innerHTML = "";
-  els.progressiveHint.classList.add("hidden");
-  els.progressiveHint.hidden = true;
   els.progressiveHint.innerHTML = "";
-  els.questionNextButton.classList.add("hidden");
-  els.questionNextButton.hidden = true;
   els.questionNextButton.textContent = "下一个单词";
-  els.nextReviewNotice.classList.add("hidden");
-  els.nextReviewNotice.hidden = true;
   els.nextReviewNotice.textContent = "";
-  els.errorReasonPanel.classList.add("hidden");
-  els.errorReasonPanel.hidden = true;
   els.errorReasonPanel.querySelectorAll("button").forEach((button) => button.classList.remove("selected"));
   saveActiveSession();
   els.answerInput.focus();
+}
+
+function setElementVisible(element, visible) {
+  element.classList.toggle("hidden", !visible);
+  element.hidden = !visible;
+}
+
+function applyRecallState(state) {
+  const correctState = state === "correct";
+  const thirdWrongState = state === "wrong_3";
+  setElementVisible(els.questionNextButton, correctState);
+  setElementVisible(els.currentDictionaryLink, correctState);
+  setElementVisible(els.nextReviewNotice, correctState);
+  setElementVisible(els.errorReasonPanel, thirdWrongState);
+  setElementVisible(els.progressiveHint, state.startsWith("wrong_"));
+  if (!correctState) {
+    els.feedback.innerHTML = "";
+    els.feedback.className = "feedback recall-note";
+  }
 }
 
 function normalize(value) {
@@ -673,6 +683,7 @@ function checkAnswer(event) {
   const item = session[current];
   const answer = normalize(els.answerInput.value);
   if (!answer) {
+    applyRecallState("empty");
     els.feedback.textContent = "请先输入英文单词。";
     els.feedback.className = "feedback recall-note";
     els.answerInput.focus();
@@ -682,6 +693,7 @@ function checkAnswer(event) {
   const usedSpellingVariant = isCorrect && answer !== normalize(item.word);
   if (isCorrect) {
     checked = true;
+    applyRecallState("correct");
     const misses = sessionMisses.get(item.id) || 0;
     const recallAssisted = misses > 0;
     if (recallAssisted) {
@@ -696,24 +708,14 @@ function checkAnswer(event) {
     els.answerInput.disabled = true;
     els.checkButton.classList.add("hidden");
     els.questionNextButton.textContent = current === session.length - 1 ? "完成本组练习" : "下一个单词";
-    els.questionNextButton.classList.remove("hidden");
-    els.questionNextButton.hidden = false;
     els.cefrBadge.parentElement.classList.remove("hidden");
-    els.progressiveHint.classList.add("hidden");
-    els.progressiveHint.hidden = true;
-    els.currentDictionaryLink.classList.remove("hidden");
-    els.currentDictionaryLink.hidden = false;
     els.speakButton.classList.remove("hidden");
     const state = scheduleReview(item, true, false, recallAssisted);
-    els.nextReviewNotice.classList.remove("hidden");
-    els.nextReviewNotice.hidden = false;
     els.nextReviewNotice.textContent = state.mastered
       ? "已完成长期复习周期，进入长期掌握。"
       : recallAssisted
         ? "本题最终答对，但有错误尝试；已加入错词强化，并将在 10 分钟后再次复习。"
         : `下一阶段：${stageLabel(state)}，${relativeTime(state.nextReview)}到期。`;
-    els.errorReasonPanel.classList.add("hidden");
-    els.errorReasonPanel.hidden = true;
     els.progressBar.style.width = `${((current + 1) / session.length) * 100}%`;
     saveActiveSession(current + 1);
     requestAnimationFrame(() => els.questionNextButton.focus());
@@ -722,15 +724,8 @@ function checkAnswer(event) {
     const misses = (sessionMisses.get(item.id) || 0) + 1;
     sessionMisses.set(item.id, misses);
     scheduleReview(item, false);
-    els.feedback.innerHTML = "";
-    els.feedback.className = "feedback recall-note";
+    applyRecallState(misses >= 3 ? "wrong_3" : `wrong_${misses}`);
     els.progressiveHint.innerHTML = progressiveHintFor(item, misses);
-    els.progressiveHint.classList.remove("hidden");
-    els.progressiveHint.hidden = false;
-    if (misses >= 3) {
-      els.errorReasonPanel.classList.remove("hidden");
-      els.errorReasonPanel.hidden = false;
-    }
     els.answerInput.value = "";
     els.checkButton.textContent = "再次校验";
     saveActiveSession(current);
