@@ -24,6 +24,7 @@ const SPELLING_EQUIVALENTS = new Map(
 );
 let words = [];
 let source = "smart";
+let specialtyReason = new URLSearchParams(window.location.search).get("reason") || "";
 let mode = "random";
 let session = [];
 let current = 0;
@@ -75,6 +76,7 @@ function activeSessionSnapshot(nextCurrent = current) {
     version: 1,
     savedAt: Date.now(),
     source,
+    specialtyReason,
     mode,
     wordIds: session.map((item) => item.id),
     current: nextCurrent,
@@ -119,6 +121,7 @@ function restoreActiveSession() {
     return false;
   }
   source = stored.source || "smart";
+  specialtyReason = stored.specialtyReason || "";
   mode = stored.mode || "random";
   session = restoredWords;
   current = Math.max(0, Math.min(Number(stored.current) || 0, session.length));
@@ -196,6 +199,15 @@ function stageLabel(state) {
   if (state.recovery) return "错词重学 · 10 分钟";
   if (state.stage < 0) return "首次学习";
   return `第 ${state.stage + 2}/8 次 · ${STAGE_NAMES[state.stage]}`;
+}
+
+function proficiencyLabel(state) {
+  if (!state) return "未学习";
+  if (state.mastered) return "已掌握";
+  if (state.relearning || state.recovery || (state.wrong || 0) > 0 && (state.lastWrongAt || 0) >= Date.now() - 30 * 864e5) return "易错";
+  if ((state.independentStreak || 0) >= 2) return "熟悉";
+  if ((state.attempts || 0) <= 1) return "初识";
+  return "学习中";
 }
 
 function speakText(text, button = null) {
@@ -311,6 +323,8 @@ function updateStats() {
         ? `当前没有到期任务，下一次复习将在${relativeTime(upcoming.nextReview)}开始。`
         : "今天没有到期复习任务。你可以学习一组新词，或进入错词本进行巩固。";
   renderCheckin();
+  renderDailyStandard();
+  renderTomorrowPreview();
 }
 
 function renderCheckin() {
@@ -338,6 +352,13 @@ function renderCheckin() {
   els.checkinStreak.textContent = `${streak} 天`;
   els.checkinTotal.textContent = [...dailyTotals.values()].reduce((sum, value) => sum + value, 0);
   els.checkinToday.textContent = `${Math.min(todayTotal, DAILY_CHECKIN_GOAL)} / ${DAILY_CHECKIN_GOAL}`;
+  const proficiencyCounts = words.reduce((counts, item) => {
+    const label = proficiencyLabel(wordState(item.id));
+    counts[label] = (counts[label] || 0) + 1;
+    return counts;
+  }, {});
+  els.proficiencySummary.innerHTML = ["未学习", "初识", "学习中", "易错", "熟悉", "已掌握"]
+    .map((label) => `<div><span>${label}</span><strong>${proficiencyCounts[label] || 0}</strong></div>`).join("");
   const rows = Array.from({ length: 7 }, (_, index) => {
     const date = new Date();
     date.setDate(date.getDate() - (6 - index));
@@ -347,6 +368,69 @@ function renderCheckin() {
     return `<tr class="${complete ? "complete" : ""}"><td>${date.getMonth() + 1}/${date.getDate()}</td><td>${details.newCount}</td><td>${details.reviewCount}</td><td>${details.wrongCount}</td><td>${details.attempts ? `${Math.round((details.correct / details.attempts) * 100)}%` : "—"}</td><td>${Math.round(details.seconds / 60)} 分钟</td><td>${complete ? "已完成" : "待完成"}</td></tr>`;
   }).join("");
   els.checkinHistory.innerHTML = `<table><thead><tr><th>日期</th><th>新词</th><th>复习</th><th>错词</th><th>独立正确率</th><th>学习用时</th><th>今日任务</th></tr></thead><tbody>${rows}</tbody></table>`;
+  const calendarDays = Array.from({ length: 35 }, (_, index) => {
+    const date = new Date();
+    date.setDate(date.getDate() - (34 - index));
+    const key = dayKey(date);
+    const total = dailyTotals.get(key) || 0;
+    const details = dailyDetails.get(key) || { newCount: 0, reviewCount: 0, wrongCount: 0, correct: 0, attempts: 0, seconds: 0 };
+    const hasOverdue = key === dayKey() && Object.values(progress.words).some((state) => state?.nextReview && state.nextReview <= Date.now() - 864e5 && !state.mastered);
+    const status = total >= DAILY_CHECKIN_GOAL ? "complete" : hasOverdue ? "overdue" : total > 0 ? "partial" : "empty";
+    return `<button type="button" class="calendar-day ${status}" data-calendar-date="${key}" title="${key}"><small>${date.getMonth() + 1}/${date.getDate()}</small><b>${status === "complete" ? "✓" : status === "overdue" ? "↻" : status === "partial" ? "◐" : "○"}</b><span>${total}</span></button>`;
+  }).join("");
+  els.learningCalendar.innerHTML = calendarDays;
+  els.learningCalendar.onclick = (event) => {
+    const button = event.target.closest("[data-calendar-date]");
+    if (!button) return;
+    const details = dailyDetails.get(button.dataset.calendarDate) || { newCount: 0, reviewCount: 0, wrongCount: 0, correct: 0, attempts: 0, seconds: 0 };
+    const accuracy = details.attempts ? `${Math.round((details.correct / details.attempts) * 100)}%` : "—";
+    els.calendarDetail.innerHTML = `<strong>${button.dataset.calendarDate} 学习记录</strong><span>新词学习：${details.newCount} 个</span><span>到期复习：${details.reviewCount} 个</span><span>错词强化：${details.wrongCount} 个</span><span>独立正确率：${accuracy}</span><span>学习用时：${Math.round(details.seconds / 60)} 分钟</span>`;
+  };
+}
+
+function todayDetails() {
+  const sessions = progress.sessions.filter((item) => item.date === dayKey());
+  return sessions.reduce((sum, item) => ({
+    total: sum.total + (item.total || 0),
+    newCount: sum.newCount + (item.newCount || 0),
+    reviewCount: sum.reviewCount + (item.reviewCount || 0),
+    wrongCount: sum.wrongCount + (item.wrongCount || 0),
+    correct: sum.correct + (item.correct || 0),
+  }), { total: 0, newCount: 0, reviewCount: 0, wrongCount: 0, correct: 0 });
+}
+
+function renderDailyStandard() {
+  const details = todayDetails();
+  const accuracy = details.total ? Math.round((details.correct / details.total) * 100) : 0;
+  const due = words.filter((item) => wordState(item.id)?.nextReview <= Date.now() && !wordState(item.id)?.mastered).length;
+  const wrong = words.filter((item) => wordState(item.id)?.wrong > 0 && !wordState(item.id)?.mastered).length;
+  els.dailyStandardGrid.innerHTML = [
+    ["新词学习", `${details.newCount} / 20`],
+    ["到期复习", `${details.reviewCount} / ${due}`],
+    ["错词强化", `${details.wrongCount} / ${wrong}`],
+    ["独立正确率", `${accuracy}% / 70%`],
+  ].map(([label, value]) => `<div><span>${label}</span><strong>${value}</strong></div>`).join("");
+  const complete = details.total >= DAILY_CHECKIN_GOAL && accuracy >= 70;
+  els.dailyStandardStatus.textContent = complete
+    ? "今日任务已完成。系统已记录你的学习进度，明天继续按复习计划学习。"
+    : "今日任务还未完成。建议先完成一组 20 个词，保持稳定学习节奏。";
+  els.dailyStandardStatus.classList.toggle("complete", complete);
+}
+
+function renderTomorrowPreview() {
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const start = new Date(tomorrow.getFullYear(), tomorrow.getMonth(), tomorrow.getDate()).getTime();
+  const end = start + 864e5;
+  const tomorrowWords = words.filter((item) => {
+    const next = wordState(item.id)?.nextReview;
+    return next >= start && next < end;
+  });
+  const wrong = tomorrowWords.filter((item) => wordState(item.id)?.wrong > 0).length;
+  els.tomorrowPreview.innerHTML = tomorrowWords.length
+    ? `<div><strong>${tomorrowWords.length}</strong><span>明天预计复习</span></div><div><strong>${wrong}</strong><span>其中错词</span></div><div><strong>${tomorrowWords.length - wrong}</strong><span>到期复习</span></div><div><strong>20</strong><span>建议新词</span></div>`
+    : "<p>暂无明日复习预告。完成更多学习记录后，系统会自动生成预测。</p>";
+  if (els.resultTomorrowPreview) els.resultTomorrowPreview.textContent = tomorrowWords.length ? `明天预计需要复习 ${tomorrowWords.length} 个单词，请按计划继续学习。` : "完成更多学习后，系统会生成明日复习预告。";
 }
 
 function updateEmptyStateForAvailability(count) {
@@ -370,7 +454,10 @@ function poolForSource() {
   const end = Math.max(Number(els.wordStart.value) || 1, Number(els.wordEnd.value) || 1);
   let pool = words.filter((item) => item.id >= start && item.id <= end);
   if (source === "all") pool = pool.filter((item) => !wordState(item.id));
-  if (source === "wrong") pool = pool.filter((item) => wordState(item.id)?.wrong > 0 && !wordState(item.id)?.mastered);
+  if (source === "wrong") pool = pool.filter((item) => {
+    const state = wordState(item.id);
+    return state?.wrong > 0 && !state?.mastered && (!specialtyReason || (state.errorReasons?.[specialtyReason] || 0) > 0 || state.lastErrorReason === specialtyReason);
+  });
   if (source === "review") {
     pool = pool
       .filter((item) => wordState(item.id)?.nextReview <= Date.now() && !wordState(item.id)?.mastered)
@@ -408,7 +495,7 @@ function updateAvailable() {
     smart: "开始今日任务",
     all: "开始学习新词",
     review: "开始到期复习",
-    wrong: "开始错词强化",
+    wrong: specialtyReason ? `开始${specialtyReason}专项` : "开始错词强化",
   };
   els.startButton.querySelector("span").textContent = startLabels[source];
   if (source === "smart") {
@@ -431,7 +518,7 @@ function updateAvailable() {
   els.smartNewLimitField.classList.add("hidden");
   els.modeControls.classList.toggle("field-disabled", source === "review");
   els.wordCountLabel.textContent = "本组最多学习";
-  els.quotaHint.textContent = source === "review" ? "严格按照复习到期时间安排" : source === "wrong" ? "集中巩固尚未掌握的错词" : "从未学习的单词中安排本组任务";
+  els.quotaHint.textContent = source === "review" ? "严格按照复习到期时间安排" : source === "wrong" ? specialtyReason ? `只练习标记为“${specialtyReason}”的错词` : "集中巩固尚未掌握的错词" : "从未学习的单词中安排本组任务";
   const count = poolForSource().length;
   const effectiveMode = source === "review" ? "sequential" : mode;
   const sessionCount = Math.min(count, requestedCount);
@@ -489,7 +576,7 @@ function renderQuestion() {
   els.cefrBadge.textContent = cefr ? `剑桥 CEFR ${window.wordCefrLabel(item)}` : "剑桥 CEFR：未标注";
   els.cefrBadge.className = `cefr-badge${cefr ? ` level-${cefr.toLowerCase()}` : " level-unmarked"}`;
   els.cefrBadge.title = cefr ? "剑桥词典不同释义可能对应多个 CEFR 等级" : "剑桥词典当前词条未提供 CEFR 等级";
-  els.stageBadge.textContent = stageLabel(wordState(item.id));
+  els.stageBadge.textContent = `${proficiencyLabel(wordState(item.id))} · ${stageLabel(wordState(item.id))}`;
   els.cefrBadge.parentElement.classList.remove("hidden");
   els.meaning.textContent = item.meaning;
   els.currentDictionaryLink.href = `https://dictionary.cambridge.org/dictionary/english-chinese-simplified/${encodeURIComponent(item.word)}`;
@@ -647,6 +734,7 @@ function scheduleReview(item, isCorrect, deferRelearning = false, wasAssisted = 
     state.nextReview = Date.now() + REVIEW_INTERVALS[0];
   } else if (isCorrect) {
     state.correct += 1;
+    state.independentStreak = (state.independentStreak || 0) + 1;
     state.assistedReview = false;
     if (state.relearning) {
       state.relearning = false;
@@ -671,6 +759,7 @@ function scheduleReview(item, isCorrect, deferRelearning = false, wasAssisted = 
     }
   } else {
     state.wrong += 1;
+    state.independentStreak = 0;
     state.lapses = (state.lapses || 0) + 1;
     state.lastWrongAt = Date.now();
     state.assistedReview = false;
@@ -785,7 +874,7 @@ function finishSession() {
     else counts.reviewCount += 1;
     return counts;
   }, { newCount: 0, reviewCount: 0, wrongCount: 0 });
-  progress.sessions.push({ date: dayKey(), total: initialTotal, correct, assisted, mistakes, seconds, source, ...sourceCounts });
+  progress.sessions.push({ date: dayKey(), total: initialTotal, correct, assisted, mistakes, seconds, source, specialtyReason, ...sourceCounts });
   progress.sessions = progress.sessions.slice(-100);
   saveProgress();
   els.quiz.classList.add("hidden");
@@ -804,10 +893,12 @@ function finishSession() {
       : accuracy >= 0.8
         ? "整体记忆稳定。错词已进入短间隔重学，下次优先完成到期复习。"
         : "本组提取较吃力。建议暂不增加新词，下一组使用智能计划继续巩固。";
+  renderTomorrowPreview();
 }
 
 function selectSource(nextSource, startImmediately = false) {
   source = nextSource;
+  if (nextSource !== "wrong") specialtyReason = "";
   document.querySelectorAll(".segment").forEach((item) => item.classList.toggle("active", item.dataset.source === nextSource));
   updateAvailable();
   if (startImmediately && !els.startButton.disabled) startSession();
@@ -906,6 +997,12 @@ els.startButton.addEventListener("click", startSession);
 els.restartButton.addEventListener("click", startSession);
 els.quickWrongButton.addEventListener("click", () => selectSource("wrong"));
 els.resultWrongButton.addEventListener("click", () => selectSource("wrong", true));
+els.continueTodayButton.addEventListener("click", () => selectSource("smart", true));
+els.startTwentyButton.addEventListener("click", () => {
+  els.wordCount.value = 20;
+  selectSource("smart", true);
+});
+els.reviewTodayWrongButton.addEventListener("click", () => selectSource("wrong", true));
 els.returnHomeButton.addEventListener("click", returnToHome);
 els.answerForm.addEventListener("submit", checkAnswer);
 els.questionNextButton.addEventListener("click", nextQuestion);
@@ -936,7 +1033,13 @@ if (words.length) {
   els.wordStart.max = els.wordEnd.max;
   updateAvailable();
   updateStats();
-  restoreActiveSession();
+  const requestedSource = new URLSearchParams(window.location.search).get("source");
+  if (requestedSource === "wrong") {
+    source = "wrong";
+    document.querySelectorAll(".segment").forEach((item) => item.classList.toggle("active", item.dataset.source === "wrong"));
+    updateAvailable();
+  }
+  if (!restoreActiveSession() && requestedSource === "wrong" && specialtyReason && !els.startButton.disabled) startSession();
 } else {
   els.emptyStateTitle.textContent = "暂无单词";
   els.emptyStateCopy.innerHTML = "<p>当前词库为空。你可以先新增单词，或导入一份雅思词汇表开始学习。</p>";
