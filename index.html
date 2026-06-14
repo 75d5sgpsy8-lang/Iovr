@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#f4f0e8" />
     <title>IELTS Core Vocabulary</title>
-    <link rel="stylesheet" href="styles.css?v=20260614-5" />
+    <link rel="stylesheet" href="styles.css?v=20260614-6" />
   </head>
   <body>
     <div class="ambient ambient-one"></div>
@@ -23,11 +23,11 @@
     </header>
 
     <main>
-      <section class="protocol-board">
+      <section class="protocol-board" id="learningStatus">
         <div class="protocol-title">
           <p class="eyebrow">ADAPTIVE SPACED REPETITION</p>
-          <h2>今日记忆指挥台</h2>
-          <p id="protocolMessage">正在分析你的记忆计划…</p>
+          <h2>今日任务</h2>
+          <p id="protocolMessage">正在读取你的词库和学习记录，请稍候…</p>
         </div>
         <div class="protocol-metrics">
           <article><span>今日完成</span><strong id="todayDone">0</strong><small>今日已练习词数</small></article>
@@ -52,8 +52,8 @@
         <aside class="setup-panel">
           <div class="section-heading">
             <div>
-              <h2>开始一组默写</h2>
-              <p>系统将优先处理到期任务，并为错词安排渐进重学。</p>
+              <h2>开始今日任务</h2>
+              <p>先完成今日任务，再考虑额外加练。坚持比一次背很多更重要。</p>
             </div>
           </div>
 
@@ -107,17 +107,30 @@
           </div>
 
           <button class="primary-button" id="startButton">
-            <span>开始默写</span>
+            <span>开始今日任务</span>
             <b class="ui-icon icon-arrow-right" aria-hidden="true"></b>
           </button>
-          <p class="available" id="available">正在读取词库…</p>
+          <div class="home-secondary-actions">
+            <button type="button" id="quickWrongButton">错词强化</button>
+            <a href="library.html">进入词库中心</a>
+            <a href="#learningStatus">查看学习记录</a>
+          </div>
+          <p class="available" id="available">正在读取你的词库和学习记录，请稍候…</p>
         </aside>
 
         <section class="practice-panel" id="practicePanel">
           <div class="empty-state" id="emptyState">
             <div class="empty-orbit"><span>✦</span></div>
-            <h2>准备好了吗？</h2>
-            <p>选择左侧范围开始学习；存在到期任务时，系统会自动优先复习。</p>
+            <h2 id="emptyStateTitle">今日任务</h2>
+            <div class="today-task-copy" id="emptyStateCopy">
+              <p>今天建议完成：</p>
+              <ul>
+                <li>新词学习：20 个</li>
+                <li>到期复习：按系统提醒完成</li>
+                <li>错词强化：优先处理最近答错的单词</li>
+              </ul>
+              <p>先完成今日任务，再考虑额外加练。坚持比一次背很多更重要。</p>
+            </div>
           </div>
 
           <div class="quiz hidden" id="quiz">
@@ -134,7 +147,7 @@
               <p id="meaning"></p>
             </div>
             <form id="answerForm">
-              <label for="answerInput">写出对应的英文单词</label>
+              <label for="answerInput">请根据中文释义写出对应的英文单词。系统会记录正确率、错词和复习进度。</label>
               <div class="answer-line">
                 <input
                   id="answerInput"
@@ -142,11 +155,15 @@
                   autocomplete="off"
                   autocapitalize="off"
                   spellcheck="false"
-                  placeholder="Type your answer…"
+                  placeholder="请输入英文单词"
                 />
-                <button type="submit" id="checkButton">校验</button>
+                <button type="submit" id="checkButton">校验答案</button>
               </div>
             </form>
+            <div class="quiz-help-actions">
+              <button type="button" id="hintButton">查看提示</button>
+              <button type="button" id="revealAnswerButton">查看答案</button>
+            </div>
             <div class="feedback" id="feedback"></div>
             <div class="next-review hidden" id="nextReviewNotice"></div>
             <a class="dictionary-link hidden" id="currentDictionaryLink" href="#" target="_blank" rel="noopener noreferrer"><span>打开剑桥英汉词典（简体）</span><i class="ui-icon icon-external" aria-hidden="true"></i></a>
@@ -154,7 +171,7 @@
 
           <div class="result hidden" id="result">
             <p class="eyebrow">SESSION COMPLETE</p>
-            <h2>这一组，完成了。</h2>
+            <h2>本组练习完成</h2>
             <div class="result-score"><strong id="resultScore">0%</strong><span>独立正确率</span></div>
             <div class="result-grid">
               <div><strong id="resultCorrect">0</strong><span>独立答对</span></div>
@@ -163,7 +180,12 @@
               <div><strong id="resultTime">0:00</strong><span>用时</span></div>
             </div>
             <p class="result-advice" id="resultAdvice"></p>
-            <button class="primary-button" id="restartButton"><span>再练一组</span><b class="ui-icon icon-arrow-right" aria-hidden="true"></b></button>
+            <p class="result-summary">你已经完成本组词汇训练。系统已记录本次正确率、错词和复习状态。建议休息 1-2 分钟后，再进行下一组练习。</p>
+            <button class="primary-button" id="restartButton"><span>继续下一组</span><b class="ui-icon icon-arrow-right" aria-hidden="true"></b></button>
+            <div class="result-secondary-actions">
+              <button type="button" id="resultWrongButton">复习错词</button>
+              <button type="button" id="returnHomeButton">返回首页</button>
+            </div>
           </div>
         </section>
       </section>
@@ -175,21 +197,21 @@
         <div class="reset-dialog-mark"><span class="ui-icon icon-refresh" aria-hidden="true"></span></div>
         <p class="eyebrow">RESET LEARNING DATA</p>
         <h2>确认清除学习记录？</h2>
-        <p>此操作只会清除当前浏览器中的学习进度，不会删除词库和雅思词汇书学习内容。</p>
+        <p>此操作会清除你的学习进度、错词记录、复习计划和统计数据，清除后无法恢复。如果你已开启云端同步，建议先做好备份。</p>
         <div class="reset-impact">
           <span>将清除</span>
           <strong id="resetImpact">0 个已学习单词 · 0 组历史记录</strong>
         </div>
-        <label for="resetConfirmInput">请输入“清除”以确认</label>
+        <label for="resetConfirmInput">如需继续，请输入“清除”。</label>
         <input id="resetConfirmInput" type="text" autocomplete="off" placeholder="输入：清除" />
         <div class="reset-dialog-actions">
           <button type="button" id="cancelReset">取消</button>
-          <button type="submit" id="confirmReset" class="danger-button" disabled>永久清除</button>
+          <button type="submit" id="confirmReset" class="danger-button" disabled>确认清除</button>
         </div>
       </form>
     </dialog>
 
-    <footer><span>WORDLOOM · CLOUD SYNC</span><span>通过 Supabase 云端同步学习记录</span></footer>
+    <footer><span>云端同步</span><span>在不同设备之间同步词库和学习记录，建议定期做好备份。</span></footer>
     <script src="words.js"></script>
     <script src="study.js"></script>
     <script src="levels.js"></script>
