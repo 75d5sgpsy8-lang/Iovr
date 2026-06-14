@@ -522,6 +522,7 @@ function setElementVisible(element, visible) {
 function applyRecallState(state) {
   const correctState = state === "correct";
   const thirdWrongState = state === "wrong_3";
+  els.quiz.dataset.recallState = state;
   setElementVisible(els.questionNextButton, correctState);
   setElementVisible(els.currentDictionaryLink, correctState);
   setElementVisible(els.nextReviewNotice, correctState);
