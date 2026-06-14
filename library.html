@@ -103,9 +103,7 @@
         <p>新增单词将同步保存到云端，并进入新词学习与智能计划。</p>
         <label><span>英文单词</span><input id="newWordText" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" required /></label>
         <label><span>中文释义</span><textarea id="newWordMeaning" rows="3" required></textarea></label>
-        <label><span>自定义参考等级（非剑桥标注）</span>
-          <select id="newWordCefr"><option value="">不指定</option><option>A1</option><option>A2</option><option>B1</option><option>B2</option><option>C1</option><option>C2</option></select>
-        </label>
+        <p class="custom-word-note">自定义单词不会自动标注剑桥 CEFR 等级，避免与剑桥词典官方标注混淆。</p>
         <p class="word-dialog-message" id="addWordMessage"></p>
         <div class="word-dialog-actions"><button type="button" id="cancelAddWord">取消</button><button type="submit">新增单词</button></div>
       </form>
