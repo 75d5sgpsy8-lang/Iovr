@@ -510,6 +510,8 @@ function renderQuestion() {
   els.questionNextButton.textContent = "下一个单词";
   els.nextReviewNotice.textContent = "";
   els.errorReasonPanel.querySelectorAll("button").forEach((button) => button.classList.remove("selected"));
+  els.errorReasonFeedback.textContent = "";
+  setElementVisible(els.errorReasonFeedback, false);
   saveActiveSession();
   els.answerInput.focus();
 }
@@ -670,6 +672,7 @@ function scheduleReview(item, isCorrect, deferRelearning = false, wasAssisted = 
   } else {
     state.wrong += 1;
     state.lapses = (state.lapses || 0) + 1;
+    state.lastWrongAt = Date.now();
     state.assistedReview = false;
     state.resumeStage = Math.max(0, Math.floor(Math.max(0, state.stage) / 2));
     state.relearning = true;
@@ -750,7 +753,16 @@ function selectErrorReason(event) {
   state.errorReasons = state.errorReasons && typeof state.errorReasons === "object" ? state.errorReasons : {};
   state.errorReasons[button.dataset.errorReason] = (state.errorReasons[button.dataset.errorReason] || 0) + 1;
   state.lastErrorReason = button.dataset.errorReason;
+  state.errorReasonHistory = Array.isArray(state.errorReasonHistory) ? state.errorReasonHistory : [];
+  state.errorReasonHistory.push({ reason: button.dataset.errorReason, at: Date.now() });
+  state.errorReasonHistory = state.errorReasonHistory.slice(-50);
+  state.lastWrongAt = state.lastWrongAt || Date.now();
+  state.mastered = false;
+  state.relearning = true;
+  state.nextReview = Math.min(state.nextReview || Infinity, Date.now() + REVIEW_INTERVALS[0]);
   els.errorReasonPanel.querySelectorAll("button").forEach((itemButton) => itemButton.classList.toggle("selected", itemButton === button));
+  els.errorReasonFeedback.innerHTML = `已记录错误原因：<strong>${escapeHtml(button.dataset.errorReason)}</strong><br>这个单词会进入错词强化，后续优先复习。`;
+  setElementVisible(els.errorReasonFeedback, true);
   saveProgress();
 }
 
