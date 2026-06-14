@@ -278,6 +278,7 @@ input:focus, select:focus { border-color: var(--green); box-shadow: 0 0 0 3px rg
 .study-detail-list { display: grid; gap: 6px; }
 .study-detail-list .study-details { min-width: 0; }
 .study-detail-list .study-details summary { width: 100%; box-sizing: border-box; justify-content: center; }
+.study-details:not([open]) > .study-content { display: none; }
 .study-source { color: var(--muted); font-size: 8px; font-weight: 700; letter-spacing: .08em; }
 .study-block, .study-related { display: grid; gap: 5px; }
 .study-block b, .study-related b { color: var(--green-deep); font-size: 9px; }
