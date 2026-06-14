@@ -158,6 +158,14 @@ input:focus, select:focus { border-color: var(--green); box-shadow: 0 0 0 3px rg
 .empty-state p { color: var(--muted); line-height: 1.8; font-size: 13px; }
 .hidden,
 [hidden] { display: none !important; }
+.quiz:not([data-recall-state="correct"]) #questionNextButton,
+.quiz:not([data-recall-state="correct"]) #currentDictionaryLink,
+.quiz:not([data-recall-state="correct"]) #nextReviewNotice {
+  display: none !important;
+}
+.quiz:not([data-recall-state="wrong_3"]) #errorReasonPanel {
+  display: none !important;
+}
 .quiz { width: min(100%, 620px); align-self: stretch; display: flex; flex-direction: column; justify-content: center; }
 .quiz-topline { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 16px; color: var(--muted); font-size: 11px; letter-spacing: .1em; }
 .progress-track { height: 2px; background: var(--line); }
