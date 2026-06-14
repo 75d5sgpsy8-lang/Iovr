@@ -1118,6 +1118,324 @@ footer { margin-top: 18px; }
   letter-spacing: .06em;
   white-space: nowrap;
 }
+
+/* Strict alignment and responsive polish */
+.site-header,
+.protocol-board,
+.workspace,
+.library-center {
+  box-sizing: border-box;
+}
+.site-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 20px;
+}
+.brand,
+.header-actions,
+.library-tabs,
+.library-summary,
+.pagination {
+  min-width: 0;
+}
+.header-actions {
+  justify-content: flex-end;
+}
+.header-link,
+.back-link,
+.reset-records-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  white-space: nowrap;
+}
+.protocol-title {
+  min-width: 0;
+}
+.protocol-metrics {
+  align-items: stretch;
+}
+.protocol-metrics article {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  align-content: start;
+  box-sizing: border-box;
+}
+.protocol-metrics article strong {
+  align-self: center;
+}
+.quick-dictionary form {
+  align-self: center;
+}
+.workspace {
+  align-items: stretch;
+}
+.setup-panel {
+  display: flex;
+  flex-direction: column;
+}
+.section-heading {
+  min-height: 68px;
+  margin-bottom: 22px;
+}
+.source-segmented {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.segment,
+.mode-segment {
+  min-width: 0;
+  min-height: 52px;
+  justify-content: center;
+}
+.mode-segment {
+  grid-template-rows: auto auto;
+  align-content: center;
+}
+.quota-panel label,
+.library-tools label {
+  min-width: 0;
+}
+.quota-panel input,
+.library-tools input,
+.library-tools select {
+  box-sizing: border-box;
+  width: 100%;
+}
+.quota-heading {
+  min-height: 34px;
+}
+.quota-heading small {
+  max-width: 210px;
+  line-height: 1.5;
+  text-align: right;
+}
+.range-fields {
+  grid-template-columns: minmax(0, 1fr) 14px minmax(0, 1fr);
+}
+.primary-button {
+  flex: 0 0 auto;
+}
+.available {
+  min-height: 34px;
+  line-height: 1.55;
+}
+.practice-panel {
+  box-sizing: border-box;
+}
+.quiz,
+.result {
+  margin-inline: auto;
+}
+.quiz-topline,
+.prompt-meta,
+.answer-study-heading {
+  min-width: 0;
+}
+.prompt-badges {
+  min-width: 0;
+}
+.library-heading {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) auto;
+  align-items: end;
+}
+.library-tabs {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(120px, 1fr));
+}
+.library-tab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  white-space: nowrap;
+}
+.library-tools {
+  grid-template-columns: minmax(260px, 1fr) 112px 112px 150px 150px 140px 140px;
+  align-items: end;
+}
+.library-tools > label {
+  display: grid;
+  align-content: end;
+  gap: 7px;
+}
+.library-search {
+  display: block !important;
+}
+.library-tools > button {
+  height: 42px;
+  padding-inline: 12px;
+}
+.library-summary {
+  align-items: center;
+  min-height: 38px;
+}
+.word-table th,
+.word-table td {
+  box-sizing: border-box;
+}
+.word-table {
+  min-width: 1274px;
+}
+.word-table .col-number { width: 64px; }
+.word-table .col-word { width: 145px; }
+.word-table .col-cefr { width: 130px; }
+.word-table .col-meaning { width: 240px; }
+.word-table .col-study { width: 280px; }
+.word-table .col-stage { width: 145px; }
+.word-table .col-wrong { width: 70px; }
+.word-table .col-dictionary { width: 105px; }
+.word-table .col-action { width: 95px; }
+.word-table td:nth-child(1),
+.word-table td:nth-child(3),
+.word-table td:nth-child(6),
+.word-table td:nth-child(7),
+.word-table td:nth-child(8),
+.word-table td:nth-child(9) {
+  vertical-align: middle;
+}
+.word-speak {
+  width: 100%;
+  justify-content: space-between;
+}
+.dictionary-link.compact,
+.delete-word-button,
+.restore-word-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  min-height: 34px;
+}
+.pagination {
+  min-height: 56px;
+}
+.page-jump input {
+  box-sizing: border-box;
+  width: 58px;
+}
+.custom-word-note {
+  margin: 0;
+  padding: 11px 12px;
+  border-radius: 10px;
+  background: var(--green-soft);
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.65;
+}
+
+@media (max-width: 1280px) {
+  .library-tools {
+    grid-template-columns: minmax(240px, 1fr) repeat(2, 110px) repeat(3, 1fr);
+  }
+  .add-word-button {
+    grid-column: auto;
+  }
+}
+@media (max-width: 1050px) {
+  .library-heading {
+    grid-template-columns: 1fr;
+    align-items: start;
+  }
+  .library-tabs {
+    width: 100%;
+  }
+  .library-tools {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .library-search {
+    grid-column: 1 / -1;
+  }
+}
+@media (max-width: 900px) {
+  .site-header {
+    gap: 12px;
+  }
+  .setup-panel,
+  .practice-panel {
+    min-height: auto;
+  }
+  .practice-panel {
+    min-height: 560px;
+  }
+}
+@media (max-width: 620px) {
+  .site-header {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 6px;
+  }
+  .brand-text-only {
+    padding-left: 2px;
+    gap: 7px;
+    letter-spacing: .09em;
+  }
+  .brand-text-only .today {
+    max-width: 92px;
+    overflow: hidden;
+    padding-left: 7px;
+    text-overflow: ellipsis;
+  }
+  .header-actions {
+    gap: 3px;
+  }
+  .protocol-title {
+    padding-bottom: 4px;
+  }
+  .protocol-metrics article {
+    min-height: 84px;
+  }
+  .section-heading {
+    min-height: auto;
+  }
+  .quota-heading {
+    display: grid;
+    gap: 5px;
+  }
+  .quota-heading small {
+    max-width: none;
+    text-align: left;
+  }
+  .practice-panel {
+    min-height: 500px;
+  }
+  .prompt-meta,
+  .answer-study-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .prompt-badges {
+    justify-content: flex-start;
+  }
+  .library-tabs {
+    grid-template-columns: 1fr 1fr;
+  }
+  .library-tools {
+    grid-template-columns: 1fr 1fr;
+  }
+  .library-search,
+  .resume-word-button,
+  .export-new-words-button,
+  .add-word-button,
+  #wrongSortField {
+    grid-column: 1 / -1;
+  }
+  .library-summary {
+    display: grid;
+    gap: 4px;
+  }
+  .pagination {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .pagination > span,
+  .page-jump {
+    grid-column: 1 / -1;
+    justify-self: center;
+  }
+}
 .header-actions { gap: 8px; }
 .header-link, .back-link, .reset-records-button {
   display: inline-flex;
