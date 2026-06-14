@@ -377,7 +377,7 @@ function studyCell(item) {
   return `<div class="study-detail-list">
     <details class="study-details"><summary>查看雅思用法</summary><div class="study-content">${usageContent || '<span class="study-empty">暂无雅思用法内容</span>'}</div></details>
     <details class="study-details"><summary>查看搭配例句</summary><div class="study-content">${collocationContent || '<span class="study-empty">暂无搭配例句内容</span>'}</div></details>
-    <details class="study-details"><summary>查看雅思词汇书匹配</summary><div class="study-content">${bookContent}</div></details>
+    <details class="study-details"><summary>查看词汇书匹配</summary><div class="study-content">${bookContent}</div></details>
   </div>`;
 }
 
