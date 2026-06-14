@@ -490,7 +490,7 @@ function renderQuestion() {
   els.cefrBadge.className = `cefr-badge${cefr ? ` level-${cefr.toLowerCase()}` : " level-unmarked"}`;
   els.cefrBadge.title = cefr ? "剑桥词典不同释义可能对应多个 CEFR 等级" : "剑桥词典当前词条未提供 CEFR 等级";
   els.stageBadge.textContent = stageLabel(wordState(item.id));
-  els.cefrBadge.parentElement.classList.add("hidden");
+  els.cefrBadge.parentElement.classList.remove("hidden");
   els.meaning.textContent = item.meaning;
   els.currentDictionaryLink.href = `https://dictionary.cambridge.org/dictionary/english-chinese-simplified/${encodeURIComponent(item.word)}`;
   applyRecallState("idle");
@@ -708,7 +708,6 @@ function checkAnswer(event) {
     els.answerInput.disabled = true;
     els.checkButton.classList.add("hidden");
     els.questionNextButton.textContent = current === session.length - 1 ? "完成本组练习" : "下一个单词";
-    els.cefrBadge.parentElement.classList.remove("hidden");
     els.speakButton.classList.remove("hidden");
     const state = scheduleReview(item, true, false, recallAssisted);
     els.nextReviewNotice.textContent = state.mastered
