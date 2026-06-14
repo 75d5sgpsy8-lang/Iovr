@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#f4f0e8" />
+    <title>IELTS Core Vocabulary</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="ambient ambient-one"></div>
+    <div class="ambient ambient-two"></div>
+
+    <header class="site-header">
+      <a class="brand brand-text-only" href="index.html">
+        <span>IELTS Core Vocabulary</span>
+        <span class="today" id="today"></span>
+      </a>
+      <div class="header-actions">
+        <a class="header-link" href="library.html">词库中心</a>
+        <button class="reset-records-button" id="resetProgress" type="button" title="管理并清除学习记录"><span>↻</span><b>清除记录</b></button>
+      </div>
+    </header>
+
+    <main>
+      <section class="protocol-board">
+        <div class="protocol-title">
+          <p class="eyebrow">ADAPTIVE SPACED REPETITION</p>
+          <h2>今日记忆指挥台</h2>
+          <p id="protocolMessage">正在分析你的记忆计划…</p>
+        </div>
+        <div class="protocol-metrics">
+          <article><span>今日完成</span><strong id="todayDone">0</strong><small>今日已练习词数</small></article>
+          <article><span>待复习</span><strong id="reviewCount">0</strong><small>当前已到期</small></article>
+          <article><span>长期掌握</span><strong id="masteredCount">0</strong><small>完成全部周期</small></article>
+          <article><span>逾期任务</span><strong id="overdueCount">0</strong><small>优先完成</small></article>
+          <article><span>学习中</span><strong id="learningCount">0</strong><small>尚未走完周期</small></article>
+          <article><span>历史独立正确率</span><strong id="accuracy">—</strong><small>不含读音提示答对</small></article>
+          <article><span>下一次复习</span><strong id="nextReviewTime">—</strong><small id="nextReviewStage">暂无计划</small></article>
+          <article class="quick-dictionary">
+            <span>快速词典</span>
+            <form id="quickDictionaryForm">
+              <input id="quickDictionaryInput" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="输入英文单词" aria-label="输入要查询的英文单词" />
+              <button type="submit">打开词典 ↗</button>
+            </form>
+            <small id="quickDictionaryHint">连接剑桥英语-中文（简体）词典</small>
+          </article>
+        </div>
+      </section>
+
+      <section class="workspace">
+        <aside class="setup-panel">
+          <div class="section-heading">
+            <div>
+              <h2>开始一组默写</h2>
+              <p>系统将优先处理到期任务，并为错词安排渐进重学。</p>
+            </div>
+          </div>
+
+          <label class="field-label">练习来源</label>
+          <div class="segmented source-segmented">
+            <button class="segment active" data-source="smart">智能计划</button>
+            <button class="segment" data-source="all">新词学习</button>
+            <button class="segment" data-source="review">到期复习</button>
+            <button class="segment" data-source="wrong">错词强化</button>
+          </div>
+          <div class="smart-plan-preview" id="smartPlanPreview">
+            <span>优先顺序</span>
+            <b>到期错词 → 其他到期任务 → 新词学习</b>
+          </div>
+
+          <label class="field-label">默写方式</label>
+          <div class="segmented mode-segmented" id="modeControls">
+            <button class="mode-segment active" data-mode="random">
+              <b>随机抽取</b>
+              <small>从序号范围内抽取</small>
+            </button>
+            <button class="mode-segment" data-mode="sequential">
+              <b>按序默写</b>
+              <small>从起始序号练到结束</small>
+            </button>
+          </div>
+
+          <div class="quota-panel">
+            <div class="quota-heading">
+              <span class="field-label">本组学习配额</span>
+              <small id="quotaHint">智能计划会优先复习，再补充新词</small>
+            </div>
+            <div class="field-grid">
+            <label>
+              <span class="field-label">单词序号范围</span>
+              <div class="range-fields">
+                <input id="wordStart" type="number" min="1" value="1" inputmode="numeric" step="1" />
+                <i></i>
+                <input id="wordEnd" type="number" min="1" value="100" inputmode="numeric" step="1" />
+              </div>
+            </label>
+            <label id="wordCountField">
+              <span class="field-label" id="wordCountLabel">本组词数上限</span>
+              <input id="wordCount" type="number" min="1" max="5083" value="20" inputmode="numeric" step="1" />
+            </label>
+            <label id="smartNewLimitField">
+              <span class="field-label">最多新词</span>
+              <input id="smartNewLimit" type="number" min="0" max="5083" value="10" inputmode="numeric" step="1" />
+            </label>
+            </div>
+          </div>
+
+          <button class="primary-button" id="startButton">
+            <span>开始默写</span>
+            <b>→</b>
+          </button>
+          <p class="available" id="available">正在读取词库…</p>
+        </aside>
+
+        <section class="practice-panel" id="practicePanel">
+          <div class="empty-state" id="emptyState">
+            <div class="empty-orbit"><span>✦</span></div>
+            <h2>准备好了吗？</h2>
+            <p>选择左侧范围开始学习；存在到期任务时，系统会自动优先复习。</p>
+          </div>
+
+          <div class="quiz hidden" id="quiz">
+            <div class="quiz-topline">
+              <span id="quizProgress">01 / 20</span>
+              <div class="progress-track"><i id="progressBar"></i></div>
+              <button class="sound-button" id="speakButton" type="button" title="播放免费真人读音" aria-label="播放免费真人读音">♪</button>
+            </div>
+            <div class="prompt-card">
+              <div class="prompt-meta">
+                <span class="prompt-index" id="promptIndex">单词序号 #0001</span>
+                <span class="prompt-badges"><span class="cefr-badge level-unmarked" id="cefrBadge">剑桥 CEFR 未标注</span><span class="stage-badge" id="stageBadge">首次学习</span></span>
+              </div>
+              <p id="meaning"></p>
+            </div>
+            <form id="answerForm">
+              <label for="answerInput">写出对应的英文单词</label>
+              <div class="answer-line">
+                <input
+                  id="answerInput"
+                  type="text"
+                  autocomplete="off"
+                  autocapitalize="off"
+                  spellcheck="false"
+                  placeholder="Type your answer…"
+                />
+                <button type="submit" id="checkButton">校验</button>
+              </div>
+            </form>
+            <div class="feedback" id="feedback"></div>
+            <div class="next-review hidden" id="nextReviewNotice"></div>
+            <a class="dictionary-link hidden" id="currentDictionaryLink" href="#" target="_blank" rel="noopener noreferrer">打开剑桥英汉词典（简体）↗</a>
+          </div>
+
+          <div class="result hidden" id="result">
+            <p class="eyebrow">SESSION COMPLETE</p>
+            <h2>这一组，完成了。</h2>
+            <div class="result-score"><strong id="resultScore">0%</strong><span>独立正确率</span></div>
+            <div class="result-grid">
+              <div><strong id="resultCorrect">0</strong><span>独立答对</span></div>
+              <div><strong id="resultAssisted">0</strong><span>提示答对</span></div>
+              <div><strong id="resultWrong">0</strong><span>回炉次数</span></div>
+              <div><strong id="resultTime">0:00</strong><span>用时</span></div>
+            </div>
+            <p class="result-advice" id="resultAdvice"></p>
+            <button class="primary-button" id="restartButton"><span>再练一组</span><b>→</b></button>
+          </div>
+        </section>
+      </section>
+
+    </main>
+
+    <dialog class="reset-dialog" id="resetDialog">
+      <form method="dialog" class="reset-dialog-card" id="resetDialogForm">
+        <div class="reset-dialog-mark">↻</div>
+        <p class="eyebrow">RESET LEARNING DATA</p>
+        <h2>确认清除学习记录？</h2>
+        <p>此操作只会清除当前浏览器中的学习进度，不会删除词库和雅思词汇书学习内容。</p>
+        <div class="reset-impact">
+          <span>将清除</span>
+          <strong id="resetImpact">0 个已学习单词 · 0 组历史记录</strong>
+        </div>
+        <label for="resetConfirmInput">请输入“清除”以确认</label>
+        <input id="resetConfirmInput" type="text" autocomplete="off" placeholder="输入：清除" />
+        <div class="reset-dialog-actions">
+          <button type="button" id="cancelReset">取消</button>
+          <button type="submit" id="confirmReset" class="danger-button" disabled>永久清除</button>
+        </div>
+      </form>
+    </dialog>
+
+    <footer><span>WORDLOOM · CLOUD SYNC</span><span>通过 Supabase 云端同步学习记录</span></footer>
+    <script src="words.js"></script>
+    <script src="study.js"></script>
+    <script src="levels.js"></script>
+    <script src="ielts-points.js"></script>
+    <script src="pronunciation.js"></script>
+    <script src="supabase-config.js"></script>
+    <script src="cloud-sync.js" data-entry="app.js"></script>
+  </body>
+</html>
