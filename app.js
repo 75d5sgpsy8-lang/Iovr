@@ -520,14 +520,22 @@ function setElementVisible(element, visible) {
 }
 
 function applyRecallState(state) {
+  els.quiz.dataset.recallState = state;
+
   const correctState = state === "correct";
   const thirdWrongState = state === "wrong_3";
-  els.quiz.dataset.recallState = state;
+
+  // The next/finish action shares one button and is unlocked only after recall.
   setElementVisible(els.questionNextButton, correctState);
   setElementVisible(els.currentDictionaryLink, correctState);
   setElementVisible(els.nextReviewNotice, correctState);
+
+  // Wrong-answer classification is available only after the third miss.
   setElementVisible(els.errorReasonPanel, thirdWrongState);
   setElementVisible(els.progressiveHint, state.startsWith("wrong_"));
+
+  // Full answer and learning content live inside feedback and are created only
+  // after a correct answer. Clear them for every non-correct state.
   if (!correctState) {
     els.feedback.innerHTML = "";
     els.feedback.className = "feedback recall-note";
