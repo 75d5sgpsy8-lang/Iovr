@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#f4f0e8" />
     <title>IELTS Core Vocabulary</title>
-    <link rel="stylesheet" href="styles.css?v=20260615-6" />
+    <link rel="stylesheet" href="styles.css?v=20260615-4" />
   </head>
   <body>
     <div class="ambient ambient-one"></div>
@@ -190,7 +190,6 @@
               <div><strong id="resultTime">0:00</strong><span>用时</span></div>
             </div>
             <p class="result-advice" id="resultAdvice"></p>
-            <p class="result-tomorrow-preview" id="resultTomorrowPreview"></p>
             <p class="result-summary">你已经完成本组词汇训练。系统已记录本组正确率、错词和复习状态。建议休息 1-2 分钟后，再继续下一组。</p>
             <button class="primary-button" id="restartButton"><span>继续下一组</span><b class="ui-icon icon-arrow-right" aria-hidden="true"></b></button>
             <div class="result-secondary-actions">
@@ -199,28 +198,6 @@
             </div>
           </div>
         </section>
-      </section>
-
-      <section class="insight-board">
-        <article class="daily-standard">
-          <p class="eyebrow">每日目标 <small>Daily Standard</small></p>
-          <h2>今日完成标准</h2>
-          <p>完成今日任务后，系统会记录你的学习进度，并更新后续复习计划。</p>
-          <div class="standard-grid" id="dailyStandardGrid"></div>
-          <p class="standard-status" id="dailyStandardStatus"></p>
-          <div class="standard-actions">
-            <button type="button" id="continueTodayButton">继续今日任务</button>
-            <button type="button" id="startTwentyButton">开始一组 20 词</button>
-            <button type="button" id="reviewTodayWrongButton">复习今日错词</button>
-            <a href="#learningRecords">查看学习记录</a>
-          </div>
-        </article>
-        <article class="tomorrow-preview">
-          <p class="eyebrow">复习计划 <small>Tomorrow Preview</small></p>
-          <h2>明日复习预告</h2>
-          <p>根据你的学习进度，系统会提前预测明天需要复习的单词数量。</p>
-          <div class="preview-metrics" id="tomorrowPreview"></div>
-        </article>
       </section>
 
       <section class="checkin-board" id="learningRecords">
@@ -233,14 +210,7 @@
           <article><span>累计学习</span><strong id="checkinTotal">0</strong><small>已完成的练习单词数</small></article>
           <article><span>今日进度</span><strong id="checkinToday">0 / 60</strong><small>完成 60 个单词即可打卡</small></article>
         </div>
-        <div class="proficiency-summary" id="proficiencySummary"></div>
         <div class="checkin-history" id="checkinHistory"></div>
-        <div class="calendar-heading">
-          <div><h3>学习日历</h3><p>查看每天的学习完成情况，保持稳定复习节奏。</p></div>
-          <div class="calendar-legend"><span>● 已完成</span><span>● 部分完成</span><span>○ 未完成</span></div>
-        </div>
-        <div class="learning-calendar" id="learningCalendar"></div>
-        <div class="calendar-detail" id="calendarDetail">点击日期查看当天学习详情。</div>
       </section>
 
     </main>
@@ -271,6 +241,6 @@
     <script src="ielts-points.js?v=20260614-11"></script>
     <script src="pronunciation.js?v=20260614-11"></script>
     <script src="supabase-config.js?v=20260614-11"></script>
-    <script src="cloud-sync.js?v=20260615-5" data-entry="app.js?v=20260615-5"></script>
+    <script src="cloud-sync.js?v=20260615-3" data-entry="app.js?v=20260615-3"></script>
   </body>
 </html>
