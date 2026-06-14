@@ -234,17 +234,17 @@ function studyCell(item) {
     return `<details class="study-details"><summary>查看考点与关联内容</summary><div class="study-content">
       ${examPoint}<span class="study-source">雅思词汇书第 ${content.pdfPage} 页</span>
       <p>作为 <b>${escapeHtml(content.parent)}</b> 的派生词或相关词出现。</p>
-      <button type="button" class="study-speak-button" data-speak-text="${escapeHtml(content.parent)}"><span>♪</span>朗读关联词</button>
+      <button type="button" class="study-speak-button" data-speak-text="${escapeHtml(content.parent)}"><span class="ui-icon icon-play" aria-hidden="true"></span>朗读关联词</button>
     </div></details>`;
   }
   const examples = content.examples.length
     ? `<div class="study-block"><b>例句</b>${content.examples.map((example) => `<div class="study-example"><p>${escapeHtml(example)}</p></div>`).join("")}</div>`
     : '<div class="study-block"><b>例句</b><p>该词条未提取到清晰英文例句。</p></div>';
   const related = content.related.length
-    ? `<div class="study-related"><b>派生／相关词</b><div class="answer-study-related">${content.related.map((word) => `<button type="button" class="study-related-word" data-speak-text="${escapeHtml(word)}">${escapeHtml(word)}<span>♪</span></button>`).join("")}</div></div>`
+    ? `<div class="study-related"><b>派生／相关词</b><div class="answer-study-related">${content.related.map((word) => `<button type="button" class="study-related-word" data-speak-text="${escapeHtml(word)}">${escapeHtml(word)}<span class="ui-icon icon-play" aria-hidden="true"></span></button>`).join("")}</div></div>`
     : "";
   return `<details class="study-details"><summary>查看雅思考点与例句</summary><div class="study-content">
-    ${examPoint}<span class="study-source">雅思词汇书第 ${content.pdfPage} 页</span><button type="button" class="study-speak-button" data-speak-text="${escapeHtml(item.word)}"><span>♪</span>朗读单词</button>${examples}${related}
+    ${examPoint}<span class="study-source">雅思词汇书第 ${content.pdfPage} 页</span><button type="button" class="study-speak-button" data-speak-text="${escapeHtml(item.word)}"><span class="ui-icon icon-play" aria-hidden="true"></span>朗读单词</button>${examples}${related}
   </div></details>`;
 }
 
@@ -262,13 +262,13 @@ function render() {
     const state = wordState(item.id);
     const wrong = state?.wrong || 0;
     return `<tr data-word-id="${item.id}" class="${item.id === highlightedWordId ? "resume-highlight" : ""}"><td><span class="word-number">#${String(item.id).padStart(4, "0")}</span></td>
-      <td><button class="word-speak" data-word="${escapeHtml(item.word)}">${escapeHtml(item.word)}<span>♪</span></button></td>
+      <td><button class="word-speak" data-word="${escapeHtml(item.word)}">${escapeHtml(item.word)}<span class="ui-icon icon-play" aria-hidden="true"></span></button></td>
       <td><span class="cefr-badge ${window.wordCefrLevel(item) ? `level-${window.wordCefrLevel(item).toLowerCase()}` : "level-unmarked"}" title="剑桥词典不同释义可能对应多个 CEFR 等级">${window.wordCefrLabel(item)}</span></td>
       <td>${escapeHtml(item.meaning).replace(/\n/g, "<br>")}</td>
       <td>${studyCell(item)}</td>
       <td><span class="table-stage ${state?.mastered ? "mastered" : ""}">${stageLabel(state)}</span></td>
       <td><span class="${wrong ? "wrong-count" : "zero-count"}">${wrong}</span></td>
-      <td><a class="dictionary-link compact" href="https://dictionary.cambridge.org/dictionary/english-chinese-simplified/${encodeURIComponent(item.word)}" target="_blank" rel="noopener noreferrer">英汉简体 ↗</a></td>
+      <td><a class="dictionary-link compact" href="https://dictionary.cambridge.org/dictionary/english-chinese-simplified/${encodeURIComponent(item.word)}" target="_blank" rel="noopener noreferrer"><span>英汉简体</span><i class="ui-icon icon-external" aria-hidden="true"></i></a></td>
       <td>${view === "deleted"
         ? `<button class="restore-word-button" type="button" data-restore-word="${item.id}">恢复显示</button>`
         : `<button class="delete-word-button" type="button" data-delete-word="${item.id}">删除单词</button>`}</td></tr>`;
