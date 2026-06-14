@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#f4f0e8" />
+    <title>IELTS Core Vocabulary · 词库中心</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="ambient ambient-one"></div>
+    <div class="ambient ambient-two"></div>
+    <header class="site-header">
+      <a class="brand brand-text-only" href="index.html"><span>IELTS Core Vocabulary</span></a>
+      <div class="header-actions">
+        <a class="header-link active" href="library.html">词库中心</a>
+        <a class="back-link" href="index.html">← 返回默写首页</a>
+      </div>
+    </header>
+
+    <main class="library-page">
+      <section class="library-hero">
+        <p class="eyebrow">VOCABULARY INTELLIGENCE</p>
+        <h1>词库中心</h1>
+      </section>
+
+      <section class="library-center" id="libraryCenter">
+        <div class="library-heading">
+          <div>
+            <p class="eyebrow">KNOWLEDGE BASE</p>
+            <h2>单词档案</h2>
+          </div>
+          <div class="library-tabs">
+            <button class="library-tab active" data-library-view="all">全部单词查询</button>
+            <button class="library-tab" data-library-view="wrong">
+              默写错误单词 <span id="wrongLibraryCount">0</span>
+            </button>
+            <button class="library-tab" data-library-view="due">
+              到期复习 <span id="dueLibraryCount">0</span>
+            </button>
+            <button class="library-tab" data-library-view="deleted">
+              已删除单词 <span id="deletedLibraryCount">0</span>
+            </button>
+          </div>
+        </div>
+        <div class="library-tools">
+          <label class="library-search"><span>⌕</span><input id="librarySearch" type="search" placeholder="搜索英文、中文释义或序号…" /></label>
+          <label><span class="field-label">起始序号</span><input id="libraryStart" type="number" min="1" value="1" inputmode="numeric" step="1" /></label>
+          <label><span class="field-label">结束序号</span><input id="libraryEnd" type="number" min="1" value="5083" inputmode="numeric" step="1" /></label>
+          <label id="wrongSortField" class="hidden">
+            <span class="field-label">错词排序</span>
+            <select id="wrongSort">
+              <option value="wrong-desc">错误次数最多</option>
+              <option value="recent">最近默写错误</option>
+              <option value="id">按单词序号</option>
+            </select>
+          </label>
+          <button class="resume-word-button" id="resumeWord" type="button">
+            <span>↗</span>
+            <b>跳至上次学习</b>
+          </button>
+          <button class="export-new-words-button" id="exportNewWords" type="button">
+            <span>↓</span>
+            <b>导出新单词</b>
+          </button>
+          <button class="add-word-button" id="openAddWord" type="button">
+            <span>＋</span>
+            <b>新增单词</b>
+          </button>
+        </div>
+        <div class="library-summary"><span id="librarySummary">正在读取词库…</span><span>每页显示 20 个单词</span></div>
+        <div class="word-table-wrap">
+          <table class="word-table">
+            <colgroup>
+              <col class="col-number" />
+              <col class="col-word" />
+              <col class="col-cefr" />
+              <col class="col-meaning" />
+              <col class="col-study" />
+              <col class="col-stage" />
+              <col class="col-wrong" />
+              <col class="col-dictionary" />
+              <col class="col-action" />
+            </colgroup>
+            <thead><tr><th>序号</th><th>单词</th><th>剑桥 CEFR</th><th>中文释义</th><th>雅思考点与学习内容</th><th>记忆阶段</th><th>错误次数</th><th>剑桥英汉词典</th><th>操作</th></tr></thead>
+            <tbody id="wordTableBody"></tbody>
+          </table>
+          <div class="library-empty hidden" id="libraryEmpty">没有找到符合条件的单词。</div>
+        </div>
+        <div class="pagination">
+          <button id="libraryPrev">← 上一页</button>
+          <span id="libraryPage">第 1 / 1 页</span>
+          <label class="page-jump"><span>跳至</span><input id="libraryJumpPage" type="number" min="1" value="1" inputmode="numeric" step="1" aria-label="跳转页码" /><span>页</span></label>
+          <button id="libraryJumpButton" type="button">跳转</button>
+          <button id="libraryNext">下一页 →</button>
+        </div>
+      </section>
+    </main>
+    <dialog class="word-dialog" id="addWordDialog">
+      <form class="word-dialog-card" id="addWordForm">
+        <p class="eyebrow">CUSTOM VOCABULARY</p>
+        <h2>新增单词</h2>
+        <p>新增单词将同步保存到云端，并进入新词学习与智能计划。</p>
+        <label><span>英文单词</span><input id="newWordText" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" required /></label>
+        <label><span>中文释义</span><textarea id="newWordMeaning" rows="3" required></textarea></label>
+        <label><span>自定义参考等级（非剑桥标注）</span>
+          <select id="newWordCefr"><option value="">不指定</option><option>A1</option><option>A2</option><option>B1</option><option>B2</option><option>C1</option><option>C2</option></select>
+        </label>
+        <p class="word-dialog-message" id="addWordMessage"></p>
+        <div class="word-dialog-actions"><button type="button" id="cancelAddWord">取消</button><button type="submit">新增单词</button></div>
+      </form>
+    </dialog>
+    <footer><span>WORDLOOM · CLOUD SYNC</span><a class="header-link" href="index.html">返回默写首页</a></footer>
+    <script src="words.js"></script>
+    <script src="study.js"></script>
+    <script src="levels.js"></script>
+    <script src="ielts-points.js"></script>
+    <script src="pronunciation.js"></script>
+    <script src="supabase-config.js"></script>
+    <script src="cloud-sync.js" data-entry="library.js"></script>
+  </body>
+</html>
