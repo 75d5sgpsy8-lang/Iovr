@@ -308,7 +308,23 @@ function updateStats() {
       ? `有 ${due.length} 个单词已经到达最佳复习时间。`
       : upcoming
         ? `当前没有到期任务，下一次复习将在${relativeTime(upcoming.nextReview)}开始。`
-        : "还没有学习计划，从一组新词开始建立记忆周期。";
+        : "今天没有到期复习任务。你可以学习一组新词，或进入错词本进行巩固。";
+}
+
+function updateEmptyStateForAvailability(count) {
+  if (!els.quiz.classList.contains("hidden") || !els.result.classList.contains("hidden")) return;
+  if (source === "wrong" && count === 0) {
+    els.emptyStateTitle.textContent = "目前没有错词";
+    els.emptyStateCopy.innerHTML = "<p>继续保持，也可以开始学习一组新词。</p>";
+    return;
+  }
+  if ((source === "smart" || source === "review") && count === 0) {
+    els.emptyStateTitle.textContent = "暂无今日任务";
+    els.emptyStateCopy.innerHTML = "<p>今天没有到期复习任务。你可以学习一组新词，或进入错词本进行巩固。</p>";
+    return;
+  }
+  els.emptyStateTitle.textContent = "今日任务";
+  els.emptyStateCopy.innerHTML = "<p>今天建议完成：</p><ul><li>新词学习：20 个</li><li>到期复习：按系统提醒完成</li><li>错词强化：优先处理最近答错的单词</li></ul><p>先完成今日任务，再考虑额外加练。坚持比一次背很多更重要。</p>";
 }
 
 function poolForSource() {
@@ -358,6 +374,7 @@ function updateAvailable() {
     els.available.textContent = `智能计划 ${plan.length} 词：到期错词 ${dueWrong} · 其他到期 ${dueRegular} · 新词 ${fresh}`;
     els.startButton.disabled = plan.length === 0;
     els.startButton.style.opacity = plan.length === 0 ? ".45" : "1";
+    updateEmptyStateForAvailability(plan.length);
     els.smartPlanPreview.classList.remove("hidden");
     els.smartNewLimitField.classList.remove("hidden");
     els.modeControls.classList.remove("field-disabled");
@@ -381,6 +398,7 @@ function updateAvailable() {
       : `当前范围有 ${count} 个词，本组按序练习 ${sessionCount} 个`;
   els.startButton.disabled = count === 0;
   els.startButton.style.opacity = count === 0 ? ".45" : "1";
+  updateEmptyStateForAvailability(count);
 }
 
 function shuffled(items) {
@@ -438,7 +456,9 @@ function renderQuestion() {
   window.prepareHumanPronunciation?.(item.word);
   els.answerInput.value = "";
   els.answerInput.disabled = false;
-  els.checkButton.textContent = "校验";
+  els.checkButton.textContent = "校验答案";
+  els.hintButton.disabled = false;
+  els.revealAnswerButton.disabled = false;
   els.feedback.className = "feedback";
   els.feedback.innerHTML = "";
   els.nextReviewNotice.classList.add("hidden");
@@ -561,7 +581,7 @@ function checkAnswer(event) {
   const item = session[current];
   const answer = normalize(els.answerInput.value);
   if (!answer) {
-    els.feedback.textContent = "先写下你的答案，再进行校验。";
+    els.feedback.textContent = "请输入英文单词，再校验答案。";
     els.feedback.className = "feedback wrong";
     return;
   }
@@ -571,11 +591,11 @@ function checkAnswer(event) {
   if (isCorrect) {
     if (usedPronunciationHint) {
       assisted += 1;
-      els.feedback.innerHTML = `<div class="answer-verdict">拼写正确。<b>${escapeHtml(item.word)}</b>${usedSpellingVariant ? `（接受拼写变体：${escapeHtml(els.answerInput.value.trim())}）` : ""}</div>${pdfStudyFeedback(item)}`;
+      els.feedback.innerHTML = `<div class="answer-verdict">回答正确！系统已记录本次作答，并会继续安排复习。<b>${escapeHtml(item.word)}</b>${usedSpellingVariant ? `（接受拼写变体：${escapeHtml(els.answerInput.value.trim())}）` : ""}</div>${pdfStudyFeedback(item)}`;
       els.feedback.className = "feedback correct";
     } else {
       correct += 1;
-      els.feedback.innerHTML = `<div class="answer-verdict">独立答对。<b>${escapeHtml(item.word)}</b>${usedSpellingVariant ? `（接受拼写变体：${escapeHtml(els.answerInput.value.trim())}）` : ""}</div>${pdfStudyFeedback(item)}`;
+      els.feedback.innerHTML = `<div class="answer-verdict">回答正确！这个单词会进入下一轮复习计划。<b>${escapeHtml(item.word)}</b>${usedSpellingVariant ? `（接受拼写变体：${escapeHtml(els.answerInput.value.trim())}）` : ""}</div>${pdfStudyFeedback(item)}`;
       els.feedback.className = "feedback correct";
     }
   } else {
@@ -584,11 +604,13 @@ function checkAnswer(event) {
     sessionMisses.set(item.id, misses);
     const willRetryThisSession = misses <= 2;
     if (willRetryThisSession) session.splice(Math.min(session.length, current + 4), 0, item);
-    els.feedback.innerHTML = `<div class="answer-verdict">正确答案是 <b>${escapeHtml(item.word)}</b>，你的答案：${escapeHtml(els.answerInput.value.trim())}</div>${pdfStudyFeedback(item)}`;
+    els.feedback.innerHTML = `<div class="answer-verdict">回答不正确。请先看正确答案，再重新默写一遍，加深记忆。正确答案是 <b>${escapeHtml(item.word)}</b>。</div>${pdfStudyFeedback(item)}`;
     els.feedback.className = "feedback wrong";
   }
   els.quizProgress.textContent = `${String(current + 1).padStart(2, "0")} / ${String(session.length).padStart(2, "0")}`;
   els.answerInput.disabled = true;
+  els.hintButton.disabled = true;
+  els.revealAnswerButton.disabled = true;
   els.checkButton.textContent = current === session.length - 1 ? "查看结果" : "下一词";
   els.progressBar.style.width = `${((current + 1) / session.length) * 100}%`;
   const willRetryThisSession = !isCorrect && (sessionMisses.get(item.id) || 0) <= 2;
@@ -608,6 +630,15 @@ function checkAnswer(event) {
     : willRetryThisSession
       ? "将在最多间隔 3 题后重新出现。本轮最多重答两次；重新答对后，10 分钟再复习一次。"
       : "本轮重答次数已达上限，10 分钟后重新学习，避免重复猜测削弱记忆。";
+}
+
+function revealCurrentAnswer() {
+  if (checked || !session[current]) return;
+  const item = session[current];
+  els.answerInput.value = "查看答案";
+  checkAnswer({ preventDefault() {} });
+  els.answerInput.value = item.word;
+  els.feedback.innerHTML = `<div class="answer-verdict">你选择了查看答案。这个单词会被加入重点复习列表。正确答案是 <b>${escapeHtml(item.word)}</b>。</div>${pdfStudyFeedback(item)}`;
 }
 
 function nextQuestion() {
@@ -642,6 +673,22 @@ function finishSession() {
       : accuracy >= 0.8
         ? "整体记忆稳定。错词已进入短间隔重学，下次优先完成到期复习。"
         : "本组提取较吃力。建议暂不增加新词，下一组使用智能计划继续巩固。";
+}
+
+function selectSource(nextSource, startImmediately = false) {
+  source = nextSource;
+  document.querySelectorAll(".segment").forEach((item) => item.classList.toggle("active", item.dataset.source === nextSource));
+  updateAvailable();
+  if (startImmediately && !els.startButton.disabled) startSession();
+  else document.querySelector(".setup-panel")?.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function returnToHome() {
+  els.quiz.classList.add("hidden");
+  els.result.classList.add("hidden");
+  els.emptyState.classList.remove("hidden");
+  updateAvailable();
+  window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
 async function speakCurrent() {
@@ -726,8 +773,13 @@ els.smartNewLimit.addEventListener("input", updateAvailable);
 enhanceNumberInputs([els.wordStart, els.wordEnd, els.wordCount, els.smartNewLimit]);
 els.startButton.addEventListener("click", startSession);
 els.restartButton.addEventListener("click", startSession);
+els.quickWrongButton.addEventListener("click", () => selectSource("wrong"));
+els.resultWrongButton.addEventListener("click", () => selectSource("wrong", true));
+els.returnHomeButton.addEventListener("click", returnToHome);
 els.answerForm.addEventListener("submit", checkAnswer);
 els.speakButton.addEventListener("click", speakCurrent);
+els.hintButton.addEventListener("click", speakCurrent);
+els.revealAnswerButton.addEventListener("click", revealCurrentAnswer);
 els.quickDictionaryForm.addEventListener("submit", openQuickDictionary);
 els.feedback.addEventListener("click", (event) => {
   const button = event.target.closest("[data-speak-text]");
@@ -755,9 +807,11 @@ if (words.length) {
   updateStats();
   restoreActiveSession();
 } else {
+  els.emptyStateTitle.textContent = "暂无单词";
+  els.emptyStateCopy.innerHTML = "<p>当前词库为空。你可以先新增单词，或导入一份雅思词汇表开始学习。</p>";
   els.available.textContent = (window.WORDS || []).length
-    ? "当前没有可学习单词，请前往词库中心检查已删除单词"
-    : "词库读取失败，请确认 words.js 与网页在同一文件夹";
+    ? "当前没有可学习单词，请前往词库中心检查已删除单词。"
+    : "词库读取失败，请确认 words.js 与网页在同一文件夹。";
 }
 
 window.addEventListener("storage", (event) => {
