@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#f4f0e8" />
     <title>IELTS Core Vocabulary · 词库中心</title>
-    <link rel="stylesheet" href="styles.css?v=20260614-6" />
+    <link rel="stylesheet" href="styles.css?v=20260614-7" />
   </head>
   <body>
     <div class="ambient ambient-one"></div>
@@ -22,7 +22,7 @@
       <section class="library-hero">
         <p class="eyebrow">VOCABULARY INTELLIGENCE</p>
         <h1>词库中心</h1>
-        <p>在这里管理你的雅思词汇库。你可以搜索单词、查看释义、雅思考点、例句和学习记录，也可以新增或导出新词。</p>
+        <p>在这里管理你的雅思词汇库。你可以搜索单词、查看释义、补充例句、标记错词，也可以导入或导出词库。</p>
       </section>
 
       <section class="library-center" id="libraryCenter">
@@ -45,7 +45,7 @@
           </div>
         </div>
         <div class="library-tools">
-          <label class="library-search"><span class="ui-icon icon-search" aria-hidden="true"></span><input id="librarySearch" type="search" placeholder="搜索英文单词、中文释义或标签" /></label>
+          <label class="library-search"><span class="ui-icon icon-search" aria-hidden="true"></span><input id="librarySearch" type="search" placeholder="搜索英文单词、中文释义、例句或标签" /></label>
           <label><span class="field-label">起始序号</span><input id="libraryStart" type="number" min="1" value="1" inputmode="numeric" step="1" /></label>
           <label><span class="field-label">结束序号</span><input id="libraryEnd" type="number" min="1" value="5083" inputmode="numeric" step="1" /></label>
           <label id="wrongSortField" class="hidden">
@@ -64,6 +64,10 @@
             <span class="ui-icon icon-download" aria-hidden="true"></span>
             <b>导出新单词</b>
           </button>
+          <button class="library-tool-button" id="importLibrary" type="button"><b>导入词库</b></button>
+          <input class="hidden" id="importLibraryFile" type="file" accept=".csv,text/csv" />
+          <button class="library-tool-button" id="exportLibrary" type="button"><b>导出词库</b></button>
+          <button class="library-tool-button" id="clearLibraryFilters" type="button"><b>清除筛选</b></button>
           <button class="add-word-button" id="openAddWord" type="button">
             <span class="ui-icon icon-plus" aria-hidden="true"></span>
             <b>新增单词</b>
@@ -104,6 +108,10 @@
         <p>新增单词将同步保存到云端，并进入新词学习与智能计划。</p>
         <label><span>英文单词</span><small>填写需要记忆的英文单词。</small><input id="newWordText" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" required /></label>
         <label><span>中文释义</span><small>填写核心中文意思，建议简洁准确。</small><textarea id="newWordMeaning" rows="3" required></textarea></label>
+        <label><span>雅思场景</span><small>例如：写作 Task 2、口语 Part 2、阅读同义替换。</small><input id="newWordScene" type="text" /></label>
+        <label><span>常用搭配</span><small>例如：significant increase。</small><input id="newWordCollocation" type="text" /></label>
+        <label><span>例句</span><small>建议使用简单、可模仿、适合雅思写作或口语的句子。</small><textarea id="newWordExample" rows="2"></textarea></label>
+        <label><span>同义替换</span><small>填写可以在雅思阅读和写作中替换使用的词。</small><input id="newWordSynonyms" type="text" /></label>
         <p class="custom-word-note">自定义单词不会自动标注剑桥 CEFR 等级，避免与剑桥词典官方标注混淆。</p>
         <p class="word-dialog-message" id="addWordMessage"></p>
         <div class="word-dialog-actions"><button type="button" id="cancelAddWord">取消</button><button type="submit">新增单词</button></div>
