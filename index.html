@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#f4f0e8" />
     <title>IELTS Core Vocabulary</title>
-    <link rel="stylesheet" href="styles.css?v=20260614-9" />
+    <link rel="stylesheet" href="styles.css?v=20260614-10" />
   </head>
   <body>
     <div class="ambient ambient-one"></div>
@@ -34,16 +34,16 @@
           <article><span>待复习</span><strong id="reviewCount">0</strong><small>今天需要复习的单词</small></article>
           <article><span>已掌握</span><strong id="masteredCount">0</strong><small>完成全部复习周期的单词</small></article>
           <article><span>逾期复习</span><strong id="overdueCount">0</strong><small>建议优先完成的复习任务</small></article>
-          <article><span>学习中</span><strong id="learningCount">0</strong><small>尚未完成全部复习周期</small></article>
-          <article><span>独立正确率</span><strong id="accuracy">—</strong><small>不含提示答对的真实正确率</small></article>
+          <article><span>学习中</span><strong id="learningCount">0</strong><small>尚未完成全部复习周期的单词</small></article>
+          <article><span>独立正确率</span><strong id="accuracy">—</strong><small>第一次默写就答对的比例</small></article>
           <article><span>下一次复习</span><strong id="nextReviewTime">—</strong><small id="nextReviewStage">系统预计的下一次复习时间</small></article>
           <article class="quick-dictionary">
-            <span>剑桥词典查询</span>
+            <span>剑桥词典</span>
             <form id="quickDictionaryForm">
               <input id="quickDictionaryInput" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="输入英文单词" aria-label="输入要查询的英文单词" />
               <button type="submit"><span>打开词典</span><i class="ui-icon icon-external" aria-hidden="true"></i></button>
             </form>
-            <small id="quickDictionaryHint">打开剑桥英汉词典，查询单词释义和例句</small>
+            <small id="quickDictionaryHint">查询单词释义、发音和例句</small>
           </article>
         </div>
       </section>
@@ -160,9 +160,9 @@
                 <button type="submit" id="checkButton">校验答案</button>
               </div>
             </form>
-            <div class="progressive-hint hidden" id="progressiveHint"></div>
-            <button class="question-next-button hidden" id="questionNextButton" type="button">下一个单词</button>
-            <div class="error-reason-panel hidden" id="errorReasonPanel">
+            <div class="progressive-hint hidden" id="progressiveHint" hidden></div>
+            <button class="question-next-button hidden" id="questionNextButton" type="button" hidden>下一个单词</button>
+            <div class="error-reason-panel hidden" id="errorReasonPanel" hidden>
               <strong>这次错误的主要原因是：</strong>
               <div class="error-reason-options">
                 <button type="button" data-error-reason="拼写错误">拼写错误</button>
@@ -174,8 +174,8 @@
               </div>
             </div>
             <div class="feedback" id="feedback"></div>
-            <div class="next-review hidden" id="nextReviewNotice"></div>
-            <a class="dictionary-link hidden" id="currentDictionaryLink" href="#" target="_blank" rel="noopener noreferrer"><span>打开剑桥英汉词典（简体）</span><i class="ui-icon icon-external" aria-hidden="true"></i></a>
+            <div class="next-review hidden" id="nextReviewNotice" hidden></div>
+            <a class="dictionary-link hidden" id="currentDictionaryLink" href="#" target="_blank" rel="noopener noreferrer" hidden><span>打开剑桥词典</span><i class="ui-icon icon-external" aria-hidden="true"></i></a>
           </div>
 
           <div class="result hidden" id="result">
@@ -189,7 +189,7 @@
               <div><strong id="resultTime">0:00</strong><span>用时</span></div>
             </div>
             <p class="result-advice" id="resultAdvice"></p>
-            <p class="result-summary">你已经完成本组词汇训练。系统已记录本次正确率、错词和复习状态。建议休息 1-2 分钟后，再进行下一组练习。</p>
+            <p class="result-summary">你已经完成本组词汇训练。系统已记录本组正确率、错词和复习状态。建议休息 1-2 分钟后，再继续下一组。</p>
             <button class="primary-button" id="restartButton"><span>继续下一组</span><b class="ui-icon icon-arrow-right" aria-hidden="true"></b></button>
             <div class="result-secondary-actions">
               <button type="button" id="resultWrongButton">复习错词</button>
@@ -221,8 +221,8 @@
         <h2>确认清除学习记录？</h2>
         <p>此操作会清除学习进度、错词记录、复习计划和历史统计，不会删除词库内容。清除后无法恢复，建议先完成云端同步。</p>
         <div class="reset-impact">
-          <span>将清除</span>
-          <strong id="resetImpact">0 个已学习单词 · 0 组历史记录</strong>
+          <span>即将清除</span>
+          <strong id="resetImpact">即将清除：0 个已学习单词、0 组练习记录。</strong>
         </div>
         <label for="resetConfirmInput">如需继续，请输入“清除”。</label>
         <input id="resetConfirmInput" type="text" autocomplete="off" placeholder="输入：清除" />
@@ -234,12 +234,12 @@
     </dialog>
 
     <footer><span>WordLoom 云端同步</span><span>在不同设备之间同步词库、学习进度、错词记录和复习计划。</span></footer>
-    <script src="words.js?v=20260614-9"></script>
-    <script src="study.js?v=20260614-9"></script>
-    <script src="levels.js?v=20260614-9"></script>
-    <script src="ielts-points.js?v=20260614-9"></script>
-    <script src="pronunciation.js?v=20260614-9"></script>
-    <script src="supabase-config.js?v=20260614-9"></script>
-    <script src="cloud-sync.js?v=20260614-9" data-entry="app.js?v=20260614-9"></script>
+    <script src="words.js?v=20260614-10"></script>
+    <script src="study.js?v=20260614-10"></script>
+    <script src="levels.js?v=20260614-10"></script>
+    <script src="ielts-points.js?v=20260614-10"></script>
+    <script src="pronunciation.js?v=20260614-10"></script>
+    <script src="supabase-config.js?v=20260614-10"></script>
+    <script src="cloud-sync.js?v=20260614-10" data-entry="app.js?v=20260614-10"></script>
   </body>
 </html>
