@@ -1574,6 +1574,36 @@ footer { margin-top: 18px; }
 }
 .error-reason-panel.hidden { display: none; }
 .error-reason-panel strong { color: var(--green-deep); font-size: 12px; }
+.error-reason-feedback {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--green-soft);
+  color: var(--green-deep);
+  font-size: 11px;
+  line-height: 1.65;
+}
+.wrong-view-note {
+  margin: 4px 0 8px;
+  padding: 12px 14px;
+  border: 1px solid rgba(16,73,48,.1);
+  border-radius: 11px;
+  background: rgba(239,247,240,.7);
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.7;
+}
+.wrong-reason-card {
+  display: grid;
+  gap: 5px;
+  margin-bottom: 7px;
+  padding: 9px 10px;
+  border: 1px solid rgba(166,79,66,.12);
+  border-radius: 9px;
+  background: rgba(166,79,66,.055);
+}
+.wrong-reason-card strong { color: var(--red); font-size: 10px; }
+.wrong-reason-card p { margin: 0; color: var(--muted); font-size: 9px; line-height: 1.55; }
 .error-reason-options { display: flex; flex-wrap: wrap; gap: 7px; }
 .error-reason-options button {
   min-height: 34px;
@@ -2309,6 +2339,7 @@ footer { margin-top: 18px; }
   .resume-word-button,
   .export-new-words-button,
   .add-word-button,
-  #wrongSortField { grid-column: 1 / -1; }
+  #wrongSortField,
+  #wrongReasonField { grid-column: 1 / -1; }
   .library-tool-button { min-height: 46px; }
 }
