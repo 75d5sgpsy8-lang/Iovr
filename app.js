@@ -244,7 +244,7 @@ function updateCurrentDateTime() {
 function openResetDialog() {
   const learnedWords = Object.keys(progress.words).length;
   const sessions = progress.sessions.length;
-  els.resetImpact.textContent = `${learnedWords} 个已学习单词 · ${sessions} 组历史记录`;
+  els.resetImpact.textContent = `即将清除：${learnedWords} 个已学习单词、${sessions} 组练习记录。`;
   els.resetConfirmInput.value = "";
   els.confirmReset.disabled = true;
   els.resetDialog.showModal();
@@ -494,6 +494,7 @@ function renderQuestion() {
   els.meaning.textContent = item.meaning;
   els.currentDictionaryLink.href = `https://dictionary.cambridge.org/dictionary/english-chinese-simplified/${encodeURIComponent(item.word)}`;
   els.currentDictionaryLink.classList.add("hidden");
+  els.currentDictionaryLink.hidden = true;
   els.speakButton.classList.remove("hidden");
   els.speakButton.classList.remove("hint-used");
   els.speakButton.classList.remove("pronunciation-missing");
@@ -502,16 +503,21 @@ function renderQuestion() {
   window.prepareHumanPronunciation?.(item.word);
   els.answerInput.value = "";
   els.answerInput.disabled = false;
+  els.checkButton.classList.remove("hidden");
   els.checkButton.textContent = "校验答案";
   els.feedback.className = "feedback";
   els.feedback.innerHTML = "";
   els.progressiveHint.classList.add("hidden");
+  els.progressiveHint.hidden = true;
   els.progressiveHint.innerHTML = "";
   els.questionNextButton.classList.add("hidden");
+  els.questionNextButton.hidden = true;
   els.questionNextButton.textContent = "下一个单词";
   els.nextReviewNotice.classList.add("hidden");
+  els.nextReviewNotice.hidden = true;
   els.nextReviewNotice.textContent = "";
   els.errorReasonPanel.classList.add("hidden");
+  els.errorReasonPanel.hidden = true;
   els.errorReasonPanel.querySelectorAll("button").forEach((button) => button.classList.remove("selected"));
   saveActiveSession();
   els.answerInput.focus();
@@ -593,7 +599,8 @@ function completeStudyFeedback(item) {
       <div><dt>正确单词</dt><dd class="correct-word">${escapeHtml(item.word)}</dd></div>
       <div><dt>中文释义</dt><dd>${escapeHtml(item.meaning)}</dd></div>
       <div><dt>词性</dt><dd>${escapeHtml(point.pos || "未标注")}</dd></div>
-      <div><dt>雅思场景</dt><dd>${escapeHtml(scene)}</dd></div>
+      <div><dt>剑桥等级</dt><dd>${escapeHtml(window.wordCefrLabel(item))}</dd></div>
+      <div><dt>雅思使用场景</dt><dd>${escapeHtml(scene)}</dd></div>
       <div><dt>常用搭配</dt><dd>${escapeHtml(collocations)}</dd></div>
       <div><dt>例句</dt><dd>${escapeHtml(examples)}</dd></div>
       <div><dt>同义替换</dt><dd>${escapeHtml(synonyms)}</dd></div>
@@ -690,18 +697,23 @@ function checkAnswer(event) {
     els.checkButton.classList.add("hidden");
     els.questionNextButton.textContent = current === session.length - 1 ? "完成本组练习" : "下一个单词";
     els.questionNextButton.classList.remove("hidden");
+    els.questionNextButton.hidden = false;
     els.cefrBadge.parentElement.classList.remove("hidden");
     els.progressiveHint.classList.add("hidden");
+    els.progressiveHint.hidden = true;
     els.currentDictionaryLink.classList.remove("hidden");
+    els.currentDictionaryLink.hidden = false;
     els.speakButton.classList.remove("hidden");
     const state = scheduleReview(item, true, false, recallAssisted);
     els.nextReviewNotice.classList.remove("hidden");
+    els.nextReviewNotice.hidden = false;
     els.nextReviewNotice.textContent = state.mastered
       ? "已完成长期复习周期，进入长期掌握。"
       : recallAssisted
         ? "本题最终答对，但有错误尝试；已加入错词强化，并将在 10 分钟后再次复习。"
         : `下一阶段：${stageLabel(state)}，${relativeTime(state.nextReview)}到期。`;
-    if (misses > 0) els.errorReasonPanel.classList.remove("hidden");
+    els.errorReasonPanel.classList.add("hidden");
+    els.errorReasonPanel.hidden = true;
     els.progressBar.style.width = `${((current + 1) / session.length) * 100}%`;
     saveActiveSession(current + 1);
     requestAnimationFrame(() => els.questionNextButton.focus());
@@ -714,6 +726,11 @@ function checkAnswer(event) {
     els.feedback.className = "feedback recall-note";
     els.progressiveHint.innerHTML = progressiveHintFor(item, misses);
     els.progressiveHint.classList.remove("hidden");
+    els.progressiveHint.hidden = false;
+    if (misses >= 3) {
+      els.errorReasonPanel.classList.remove("hidden");
+      els.errorReasonPanel.hidden = false;
+    }
     els.answerInput.value = "";
     els.checkButton.textContent = "再次校验";
     saveActiveSession(current);
