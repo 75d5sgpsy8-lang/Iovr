@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#f4f0e8" />
     <title>IELTS Core Vocabulary</title>
-    <link rel="stylesheet" href="styles.css?v=20260614-4" />
+    <link rel="stylesheet" href="styles.css?v=20260614-5" />
   </head>
   <body>
     <div class="ambient ambient-one"></div>
@@ -18,7 +18,7 @@
       </a>
       <div class="header-actions">
         <a class="header-link" href="library.html">词库中心</a>
-        <button class="reset-records-button" id="resetProgress" type="button" title="管理并清除学习记录"><span>↻</span><b>清除记录</b></button>
+        <button class="reset-records-button" id="resetProgress" type="button" title="管理并清除学习记录"><span class="ui-icon icon-refresh" aria-hidden="true"></span><b>清除记录</b></button>
       </div>
     </header>
 
@@ -41,7 +41,7 @@
             <span>快速词典</span>
             <form id="quickDictionaryForm">
               <input id="quickDictionaryInput" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="输入英文单词" aria-label="输入要查询的英文单词" />
-              <button type="submit">打开词典 ↗</button>
+              <button type="submit"><span>打开词典</span><i class="ui-icon icon-external" aria-hidden="true"></i></button>
             </form>
             <small id="quickDictionaryHint">连接剑桥英语-中文（简体）词典</small>
           </article>
@@ -108,7 +108,7 @@
 
           <button class="primary-button" id="startButton">
             <span>开始默写</span>
-            <b>→</b>
+            <b class="ui-icon icon-arrow-right" aria-hidden="true"></b>
           </button>
           <p class="available" id="available">正在读取词库…</p>
         </aside>
@@ -124,7 +124,7 @@
             <div class="quiz-topline">
               <span id="quizProgress">01 / 20</span>
               <div class="progress-track"><i id="progressBar"></i></div>
-              <button class="sound-button" id="speakButton" type="button" title="播放免费真人读音" aria-label="播放免费真人读音">♪</button>
+              <button class="sound-button" id="speakButton" type="button" title="播放免费真人读音" aria-label="播放免费真人读音"><span class="ui-icon icon-play" aria-hidden="true"></span></button>
             </div>
             <div class="prompt-card">
               <div class="prompt-meta">
@@ -149,7 +149,7 @@
             </form>
             <div class="feedback" id="feedback"></div>
             <div class="next-review hidden" id="nextReviewNotice"></div>
-            <a class="dictionary-link hidden" id="currentDictionaryLink" href="#" target="_blank" rel="noopener noreferrer">打开剑桥英汉词典（简体）↗</a>
+            <a class="dictionary-link hidden" id="currentDictionaryLink" href="#" target="_blank" rel="noopener noreferrer"><span>打开剑桥英汉词典（简体）</span><i class="ui-icon icon-external" aria-hidden="true"></i></a>
           </div>
 
           <div class="result hidden" id="result">
@@ -163,7 +163,7 @@
               <div><strong id="resultTime">0:00</strong><span>用时</span></div>
             </div>
             <p class="result-advice" id="resultAdvice"></p>
-            <button class="primary-button" id="restartButton"><span>再练一组</span><b>→</b></button>
+            <button class="primary-button" id="restartButton"><span>再练一组</span><b class="ui-icon icon-arrow-right" aria-hidden="true"></b></button>
           </div>
         </section>
       </section>
@@ -172,7 +172,7 @@
 
     <dialog class="reset-dialog" id="resetDialog">
       <form method="dialog" class="reset-dialog-card" id="resetDialogForm">
-        <div class="reset-dialog-mark">↻</div>
+        <div class="reset-dialog-mark"><span class="ui-icon icon-refresh" aria-hidden="true"></span></div>
         <p class="eyebrow">RESET LEARNING DATA</p>
         <h2>确认清除学习记录？</h2>
         <p>此操作只会清除当前浏览器中的学习进度，不会删除词库和雅思词汇书学习内容。</p>
