@@ -433,7 +433,7 @@ function renderQuestion() {
   els.speakButton.classList.remove("hidden");
   els.speakButton.classList.remove("hint-used");
   els.speakButton.classList.remove("pronunciation-missing");
-  els.speakButton.textContent = "♪";
+  els.speakButton.classList.remove("pronunciation-ready", "pronunciation-loading");
   els.speakButton.title = "播放免费真人读音；使用后本题计为提示答对";
   window.prepareHumanPronunciation?.(item.word);
   els.answerInput.value = "";
@@ -485,7 +485,7 @@ function pdfStudyFeedback(item) {
     return `${examPoint}<section class="answer-study-card">
       <div class="answer-study-heading"><span>雅思词汇书关联内容</span><small>第 ${content.pdfPage} 页</small></div>
       <p>该词作为 <b>${escapeHtml(content.parent)}</b> 的派生词或相关词出现。</p>
-      <button type="button" class="study-speak-button" data-speak-text="${escapeHtml(content.parent)}"><span>♪</span>朗读关联词</button>
+      <button type="button" class="study-speak-button" data-speak-text="${escapeHtml(content.parent)}"><span class="ui-icon icon-play" aria-hidden="true"></span>朗读关联词</button>
     </section>`;
   }
   const examples = content.examples.length
@@ -494,12 +494,12 @@ function pdfStudyFeedback(item) {
     : '<div class="answer-study-block"><strong>例句</strong><p>该词条未提取到清晰英文例句。</p></div>';
   const related = content.related.length
     ? `<div class="answer-study-block"><strong>派生／相关词</strong><div class="answer-study-related">${content.related.map((word) =>
-      `<button type="button" class="study-related-word" data-speak-text="${escapeHtml(word)}">${escapeHtml(word)}<span>♪</span></button>`
+      `<button type="button" class="study-related-word" data-speak-text="${escapeHtml(word)}">${escapeHtml(word)}<span class="ui-icon icon-play" aria-hidden="true"></span></button>`
     ).join("")}</div></div>`
     : "";
   return `${examPoint}<section class="answer-study-card">
     <div class="answer-study-heading"><span>雅思词汇书学习内容</span><small>第 ${content.pdfPage} 页</small></div>
-    <button type="button" class="study-speak-button" data-speak-text="${escapeHtml(item.word)}"><span>♪</span>朗读单词</button>
+    <button type="button" class="study-speak-button" data-speak-text="${escapeHtml(item.word)}"><span class="ui-icon icon-play" aria-hidden="true"></span>朗读单词</button>
     ${examples}${related}
   </section>`;
 }
