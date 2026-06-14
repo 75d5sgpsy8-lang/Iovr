@@ -146,7 +146,6 @@ function addCustomWord(event) {
   }
   const id = Math.max(0, ...allWords.map((item) => item.id)) + 1;
   const item = { id, page: null, word, meaning, custom: true };
-  if (els.newWordCefr.value) item.cefr = els.newWordCefr.value;
   customWords.push(item);
   saveCustomWords();
   allWords = combinedWords();
@@ -314,7 +313,7 @@ function resumeLastWord() {
   }
   els.librarySearch.value = "";
   els.libraryStart.value = 1;
-  els.libraryEnd.value = words.length;
+  els.libraryEnd.value = Math.max(...allWords.map((item) => item.id));
   const filtered = results();
   const index = filtered.findIndex((item) => item.id === lastWord.id);
   page = Math.floor(index / PAGE_SIZE) + 1;
