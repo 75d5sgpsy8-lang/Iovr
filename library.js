@@ -74,6 +74,17 @@ function csvCell(value) {
   return `"${String(value ?? "").replace(/"/g, '""')}"`;
 }
 
+function downloadCsv(rows, filename) {
+  const csv = rows.map((row) => row.map(csvCell).join(",")).join("\r\n");
+  const blob = new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
 function exportNewWords() {
   const newWords = words.filter((item) => !wordState(item.id));
   if (!newWords.length) {
@@ -84,15 +95,104 @@ function exportNewWords() {
     ["序号", "单词", "剑桥 CEFR 等级", "中文释义"],
     ...newWords.map((item) => [item.id, item.word, window.wordCefrLabel(item), item.meaning]),
   ];
-  const csv = rows.map((row) => row.map(csvCell).join(",")).join("\r\n");
-  const blob = new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = `wordloom-new-words-${new Date().toISOString().slice(0, 10)}.csv`;
-  link.click();
-  URL.revokeObjectURL(url);
+  downloadCsv(rows, `wordloom-new-words-${new Date().toISOString().slice(0, 10)}.csv`);
   els.librarySummary.textContent = `已导出 ${newWords.length} 个尚未学习的新单词。`;
+}
+
+function exportLibrary() {
+  const rows = [
+    ["单词", "中文释义", "雅思场景", "常用搭配", "例句", "同义替换", "剑桥 CEFR 等级"],
+    ...words.map((item) => [item.word, item.meaning, item.scene, item.collocation, item.example, item.synonyms, window.wordCefrLabel(item)]),
+  ];
+  downloadCsv(rows, `ielts-vocabulary-library-${new Date().toISOString().slice(0, 10)}.csv`);
+  els.librarySummary.textContent = `已导出 ${words.length} 个可见单词。`;
+}
+
+function parseCsv(text) {
+  const rows = [];
+  let row = [];
+  let cell = "";
+  let quoted = false;
+  for (let index = 0; index < text.length; index += 1) {
+    const character = text[index];
+    if (character === '"' && quoted && text[index + 1] === '"') {
+      cell += '"';
+      index += 1;
+    } else if (character === '"') quoted = !quoted;
+    else if (character === "," && !quoted) {
+      row.push(cell);
+      cell = "";
+    } else if ((character === "\n" || character === "\r") && !quoted) {
+      if (character === "\r" && text[index + 1] === "\n") index += 1;
+      row.push(cell);
+      if (row.some((value) => value.trim())) rows.push(row);
+      row = [];
+      cell = "";
+    } else cell += character;
+  }
+  row.push(cell);
+  if (row.some((value) => value.trim())) rows.push(row);
+  return rows;
+}
+
+async function importLibraryFile(event) {
+  const file = event.target.files?.[0];
+  if (!file) return;
+  const rows = parseCsv((await file.text()).replace(/^\uFEFF/, ""));
+  const headers = (rows.shift() || []).map((value) => value.trim());
+  const indexOf = (...names) => names.map((name) => headers.indexOf(name)).find((index) => index >= 0) ?? -1;
+  const wordIndex = indexOf("单词", "英文单词", "word");
+  const meaningIndex = indexOf("中文释义", "释义", "meaning");
+  if (wordIndex < 0 || meaningIndex < 0) {
+    els.librarySummary.textContent = "导入失败：表格必须包含“单词”和“中文释义”列。";
+    event.target.value = "";
+    return;
+  }
+  const fieldIndexes = {
+    scene: indexOf("雅思场景"),
+    collocation: indexOf("常用搭配"),
+    example: indexOf("例句"),
+    synonyms: indexOf("同义替换"),
+  };
+  const known = new Set(allWords.map((item) => item.word.toLowerCase()));
+  let nextId = Math.max(0, ...allWords.map((item) => item.id)) + 1;
+  let added = 0;
+  rows.forEach((row) => {
+    const word = (row[wordIndex] || "").trim().toLowerCase().replace(/\s+/g, " ");
+    const meaning = (row[meaningIndex] || "").trim();
+    if (!word || !meaning || known.has(word)) return;
+    customWords.push({
+      id: nextId++,
+      page: null,
+      word,
+      meaning,
+      custom: true,
+      scene: fieldIndexes.scene >= 0 ? (row[fieldIndexes.scene] || "").trim() : "",
+      collocation: fieldIndexes.collocation >= 0 ? (row[fieldIndexes.collocation] || "").trim() : "",
+      example: fieldIndexes.example >= 0 ? (row[fieldIndexes.example] || "").trim() : "",
+      synonyms: fieldIndexes.synonyms >= 0 ? (row[fieldIndexes.synonyms] || "").trim() : "",
+    });
+    known.add(word);
+    added += 1;
+  });
+  saveCustomWords();
+  allWords = combinedWords();
+  words = availableWords();
+  els.libraryEnd.max = Math.max(...allWords.map((item) => item.id));
+  els.libraryEnd.value = els.libraryEnd.max;
+  event.target.value = "";
+  render();
+  els.librarySummary.textContent = added ? `已导入 ${added} 个新单词；重复单词已跳过。` : "未导入新单词：表格内容为空或单词均已存在。";
+}
+
+function clearLibraryFilters() {
+  view = "all";
+  page = 1;
+  els.librarySearch.value = "";
+  els.libraryStart.value = 1;
+  els.libraryEnd.value = Math.max(...allWords.map((item) => item.id));
+  document.querySelectorAll(".library-tab").forEach((button) => button.classList.toggle("active", button.dataset.libraryView === "all"));
+  render();
 }
 
 function removeFromActiveSession(id) {
@@ -147,7 +247,13 @@ function addCustomWord(event) {
     return;
   }
   const id = Math.max(0, ...allWords.map((item) => item.id)) + 1;
-  const item = { id, page: null, word, meaning, custom: true };
+  const item = {
+    id, page: null, word, meaning, custom: true,
+    scene: els.newWordScene.value.trim(),
+    collocation: els.newWordCollocation.value.trim(),
+    example: els.newWordExample.value.trim(),
+    synonyms: els.newWordSynonyms.value.trim(),
+  };
   customWords.push(item);
   saveCustomWords();
   allWords = combinedWords();
@@ -210,7 +316,8 @@ function results() {
   const filtered = sourceWords.filter((item) => {
     const pdfStudy = study[item.id];
     const studyText = pdfStudy ? [...pdfStudy.examples, ...pdfStudy.related, pdfStudy.parent].join(" ").toLowerCase() : "";
-    const matchesQuery = !query || item.word.toLowerCase().includes(query) || item.meaning.toLowerCase().includes(query) || studyText.includes(query) || String(item.id) === query;
+    const customText = [item.scene, item.collocation, item.example, item.synonyms].filter(Boolean).join(" ").toLowerCase();
+    const matchesQuery = !query || item.word.toLowerCase().includes(query) || item.meaning.toLowerCase().includes(query) || studyText.includes(query) || customText.includes(query) || String(item.id) === query;
     return item.id >= start && item.id <= end && matchesQuery && matchesView(item);
   });
   if (view === "wrong") {
@@ -228,6 +335,17 @@ function results() {
 }
 
 function studyCell(item) {
+  if (item.custom) {
+    const fields = [
+      ["雅思场景", item.scene],
+      ["常用搭配", item.collocation],
+      ["例句", item.example],
+      ["同义替换", item.synonyms],
+    ].filter(([, value]) => value);
+    return fields.length
+      ? `<details class="study-details"><summary>查看自定义学习内容</summary><div class="study-content">${fields.map(([label, value]) => `<div class="study-block"><b>${label}</b><p>${escapeHtml(value)}</p></div>`).join("")}</div></details>`
+      : '<span class="study-empty">暂无自定义学习内容</span>';
+  }
   const content = study[item.id];
   const point = window.ieltsPointsFor(item, content);
   const examPoint = `<div class="ielts-point-summary"><b>${escapeHtml(point.topic)}</b><span>${escapeHtml(point.examUse)}</span><small>${escapeHtml(point.caution)}</small></div>`;
@@ -406,6 +524,10 @@ els.libraryJumpPage.addEventListener("keydown", (event) => {
 });
 els.resumeWord.addEventListener("click", resumeLastWord);
 els.exportNewWords.addEventListener("click", exportNewWords);
+els.exportLibrary.addEventListener("click", exportLibrary);
+els.importLibrary.addEventListener("click", () => els.importLibraryFile.click());
+els.importLibraryFile.addEventListener("change", importLibraryFile);
+els.clearLibraryFilters.addEventListener("click", clearLibraryFilters);
 els.openAddWord.addEventListener("click", openAddWordDialog);
 els.cancelAddWord.addEventListener("click", closeAddWordDialog);
 els.addWordForm.addEventListener("submit", addCustomWord);
