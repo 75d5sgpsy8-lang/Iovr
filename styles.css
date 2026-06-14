@@ -1374,6 +1374,115 @@ footer { margin-top: 18px; }
     grid-column: auto;
   }
 }
+
+/* Clear task-focused copy and secondary actions */
+.home-secondary-actions,
+.result-secondary-actions,
+.quiz-help-actions {
+  display: grid;
+  gap: 8px;
+}
+.home-secondary-actions {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: 10px;
+}
+.home-secondary-actions button,
+.home-secondary-actions a,
+.result-secondary-actions button,
+.quiz-help-actions button {
+  display: inline-flex;
+  min-height: 38px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 8px 10px;
+  background: rgba(255,255,255,.72);
+  color: var(--green-deep);
+  font-size: 9px;
+  font-weight: 800;
+  line-height: 1.4;
+  text-align: center;
+  text-decoration: none;
+}
+.home-secondary-actions button:hover,
+.home-secondary-actions a:hover,
+.result-secondary-actions button:hover,
+.quiz-help-actions button:hover {
+  border-color: var(--green);
+  background: var(--green-soft);
+}
+.today-task-copy {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.75;
+  text-align: left;
+}
+.today-task-copy p { margin-bottom: 10px; }
+.today-task-copy ul {
+  display: grid;
+  gap: 5px;
+  margin: 0 0 12px;
+  padding-left: 18px;
+}
+.quiz-help-actions {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 10px;
+}
+.quiz-help-actions button:disabled {
+  cursor: default;
+  opacity: .45;
+}
+.result-summary {
+  margin: 0 0 16px;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.75;
+}
+.result-secondary-actions {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 9px;
+}
+.library-hero > p:last-child {
+  max-width: 720px;
+  line-height: 1.75;
+}
+.library-empty {
+  align-content: center;
+  justify-items: center;
+  gap: 8px;
+  min-height: 240px;
+  padding: 28px;
+  text-align: center;
+}
+.library-empty:not(.hidden) { display: grid; }
+.library-empty strong {
+  color: var(--ink);
+  font-size: 15px;
+}
+.library-empty span {
+  max-width: 420px;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.7;
+}
+.word-dialog-card label small {
+  display: block;
+  margin: 4px 0 7px;
+  color: var(--muted);
+  font-size: 9px;
+  line-height: 1.55;
+}
+
+@media (max-width: 620px) {
+  .home-secondary-actions { grid-template-columns: 1fr; }
+  .home-secondary-actions button,
+  .home-secondary-actions a,
+  .quiz-help-actions button,
+  .result-secondary-actions button {
+    min-height: 44px;
+  }
+}
 @media (max-width: 1050px) {
   .library-heading {
     grid-template-columns: 1fr;
