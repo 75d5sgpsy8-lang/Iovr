@@ -1375,6 +1375,190 @@ footer { margin-top: 18px; }
   }
 }
 
+/* Final task-tool alignment overrides */
+.source-segmented .segment {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 4px;
+  align-content: center;
+  justify-items: center;
+  min-height: 64px;
+  white-space: normal;
+}
+.source-segmented .segment small {
+  text-align: center;
+  line-height: 1.35;
+}
+.library-tools {
+  grid-template-columns: minmax(260px, 2fr) repeat(2, 112px) repeat(6, minmax(100px, 1fr));
+}
+.library-tool-button {
+  height: 44px;
+  min-height: 44px;
+  justify-content: center;
+}
+@media (max-width: 1180px) {
+  .library-tools { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .library-search { grid-column: 1 / -1; }
+}
+@media (max-width: 620px) {
+  .library-tools { grid-template-columns: 1fr 1fr; }
+  .library-search,
+  .resume-word-button,
+  .export-new-words-button,
+  .add-word-button,
+  #wrongSortField { grid-column: 1 / -1; }
+  .library-tool-button { min-height: 46px; }
+}
+
+/* Daily IELTS task refinement */
+.eyebrow small {
+  margin-left: 8px;
+  color: var(--muted);
+  font-size: .72em;
+  letter-spacing: .08em;
+}
+.source-segmented .segment {
+  display: grid;
+  gap: 4px;
+  align-content: center;
+  min-height: 64px;
+  padding: 9px 10px;
+  line-height: 1.2;
+}
+.source-segmented .segment b { font-size: 13px; }
+.source-segmented .segment small {
+  color: inherit;
+  font-size: 9px;
+  font-weight: 600;
+  opacity: .72;
+}
+.error-reason-panel {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+  padding: 15px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: rgba(255,255,255,.64);
+}
+.error-reason-panel.hidden { display: none; }
+.error-reason-panel strong { color: var(--green-deep); font-size: 12px; }
+.error-reason-options { display: flex; flex-wrap: wrap; gap: 7px; }
+.error-reason-options button {
+  min-height: 34px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0 12px;
+  background: #fff;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+}
+.error-reason-options button.selected {
+  border-color: var(--green);
+  background: var(--green);
+  color: #fff;
+}
+.checkin-board {
+  margin: 18px auto 0;
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  padding: 24px;
+  background: rgba(255,255,255,.82);
+  box-shadow: 0 14px 40px rgba(24,50,37,.06);
+}
+.checkin-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  gap: 20px;
+  margin-bottom: 16px;
+}
+.checkin-heading h2 { margin: 5px 0 0; }
+.checkin-heading > p { color: var(--muted); font-size: 12px; }
+.checkin-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+.checkin-metrics article,
+.checkin-history article {
+  display: grid;
+  gap: 5px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 14px;
+  background: rgba(248,250,247,.8);
+}
+.checkin-metrics span,
+.checkin-history span { color: var(--muted); font-size: 10px; font-weight: 800; }
+.checkin-metrics strong { color: var(--ink); font-size: 24px; }
+.checkin-metrics small,
+.checkin-history small { color: var(--muted); font-size: 9px; }
+.checkin-history {
+  overflow-x: auto;
+  margin-top: 10px;
+}
+.checkin-history table {
+  width: 100%;
+  min-width: 680px;
+  border-collapse: collapse;
+}
+.checkin-history th,
+.checkin-history td {
+  border-bottom: 1px solid var(--line);
+  padding: 10px;
+  color: var(--muted);
+  font-size: 10px;
+  text-align: center;
+}
+.checkin-history th {
+  background: rgba(236,243,238,.7);
+  color: var(--green-deep);
+  font-weight: 800;
+}
+.checkin-history tr.complete td {
+  background: #edf5ef;
+  color: var(--green-deep);
+  font-weight: 800;
+}
+.library-tool-button {
+  min-height: 48px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 0 13px;
+  background: #fff;
+  color: var(--green-deep);
+  font-size: 10px;
+}
+.word-dialog-card { max-height: min(88vh, 760px); overflow: auto; }
+
+@media (max-width: 900px) {
+  .checkin-metrics { grid-template-columns: 1fr; }
+  .source-segmented { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 620px) {
+  .protocol-title h2 { font-size: 28px; }
+  .source-segmented .segment { min-height: 70px; }
+  .practice-panel { scroll-margin-top: 8px; }
+  .answer-line {
+    position: sticky;
+    bottom: 8px;
+    z-index: 8;
+    border: 1px solid var(--line);
+    border-radius: 15px;
+    padding: 6px;
+    background: rgba(255,255,255,.96);
+    box-shadow: 0 10px 28px rgba(24,50,37,.14);
+  }
+  .answer-line input { min-height: 52px; font-size: 20px; }
+  .answer-line button { min-height: 52px; }
+  .checkin-board { padding: 18px; }
+  .checkin-heading { display: grid; }
+  .error-reason-options button { min-height: 40px; }
+}
+
 /* Clear task-focused copy and secondary actions */
 .home-secondary-actions,
 .result-secondary-actions,
@@ -1961,4 +2145,40 @@ footer { margin-top: 18px; }
   .quick-dictionary button {
     min-height: 44px;
   }
+}
+
+/* Keep the expanded daily-task controls aligned after all legacy overrides. */
+.source-segmented .segment {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 4px;
+  align-content: center;
+  justify-items: center;
+  min-height: 64px;
+  white-space: normal;
+}
+.source-segmented .segment small {
+  text-align: center;
+  line-height: 1.35;
+}
+.library-tools {
+  grid-template-columns: minmax(260px, 2fr) repeat(2, 112px) repeat(6, minmax(100px, 1fr));
+}
+.library-tool-button {
+  height: 44px;
+  min-height: 44px;
+  justify-content: center;
+}
+@media (max-width: 1180px) {
+  .library-tools { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .library-search { grid-column: 1 / -1; }
+}
+@media (max-width: 620px) {
+  .library-tools { grid-template-columns: 1fr 1fr; }
+  .library-search,
+  .resume-word-button,
+  .export-new-words-button,
+  .add-word-button,
+  #wrongSortField { grid-column: 1 / -1; }
+  .library-tool-button { min-height: 46px; }
 }
