@@ -90,8 +90,7 @@
     button.setAttribute("aria-label", text);
     button.classList.toggle("pronunciation-missing", state === "missing");
     button.classList.toggle("pronunciation-ready", state === "prepared");
-    const icon = button.matches(".sound-button") ? button : button.querySelector("span");
-    if (icon) icon.textContent = state === "loading" ? "…" : state === "prepared" ? "▶" : "♪";
+    button.classList.toggle("pronunciation-loading", state === "loading");
   }
 
   function playRecording(recording, button) {
