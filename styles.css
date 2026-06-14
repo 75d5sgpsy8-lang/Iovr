@@ -952,6 +952,40 @@ button, input, select, textarea { transition: border-color .15s ease, background
 .quick-dictionary { grid-column: span 2; }
 .quick-dictionary form { gap: 6px; }
 .quick-dictionary input, .quick-dictionary button { min-height: 34px; }
+.quick-dictionary input {
+  border-color: #b8c9bd;
+  background: #fff;
+  box-shadow: inset 0 0 0 1px rgba(36,106,74,.06), 0 1px 3px rgba(24,50,37,.05);
+}
+.quick-dictionary input:hover {
+  border-color: #8fac99;
+}
+.quick-dictionary input:focus {
+  border-color: var(--green);
+  box-shadow: 0 0 0 3px rgba(36,106,74,.13);
+  outline: none;
+}
+.number-input {
+  border-color: #c8d4cb;
+  background: #fff;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  font-weight: 750;
+  caret-color: var(--green);
+}
+.number-input:hover {
+  border-color: #9fb5a6;
+}
+.number-input:focus {
+  border-color: var(--green);
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(36,106,74,.12);
+  outline: none;
+}
+.number-input::selection {
+  background: var(--green);
+  color: #fff;
+}
 
 .workspace {
   margin-top: 18px;
@@ -1277,7 +1311,8 @@ footer { margin-top: 18px; }
   box-sizing: border-box;
 }
 .word-table {
-  min-width: 1274px;
+  width: calc(100% + 110px);
+  min-width: 1384px;
 }
 .word-table .col-number { width: 64px; }
 .word-table .col-word { width: 145px; }
@@ -1287,7 +1322,12 @@ footer { margin-top: 18px; }
 .word-table .col-stage { width: 145px; }
 .word-table .col-wrong { width: 70px; }
 .word-table .col-dictionary { width: 105px; }
-.word-table .col-action { width: 95px; }
+.word-table .col-action { width: 110px; }
+.word-table th:nth-child(9),
+.word-table td:nth-child(9) {
+  border-left: 1px solid var(--line);
+  background: #fbfcfa;
+}
 .word-table td:nth-child(1),
 .word-table td:nth-child(3),
 .word-table td:nth-child(6),
