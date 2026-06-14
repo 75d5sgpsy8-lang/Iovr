@@ -661,6 +661,7 @@ function enhanceNumberInputs(inputs) {
     input.classList.add("number-input");
     input.addEventListener("focus", () => {
       input.dataset.replaceReady = "true";
+      requestAnimationFrame(() => input.select());
     });
     input.addEventListener("beforeinput", (event) => {
       if (input.dataset.replaceReady === "true" && event.inputType.startsWith("insert")) {
@@ -669,12 +670,20 @@ function enhanceNumberInputs(inputs) {
       }
     });
     input.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        input.blur();
+        return;
+      }
       if (input.dataset.replaceReady === "true" && (event.key === "Backspace" || event.key === "Delete")) {
         event.preventDefault();
         input.value = "";
         input.dataset.replaceReady = "false";
         input.dispatchEvent(new Event("input", { bubbles: true }));
       }
+    });
+    input.addEventListener("click", () => {
+      if (input.dataset.replaceReady === "true") input.select();
     });
     input.addEventListener("blur", () => {
       input.dataset.replaceReady = "false";
