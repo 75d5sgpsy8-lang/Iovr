@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#f4f0e8" />
     <title>IELTS Core Vocabulary · 词库中心</title>
-    <link rel="stylesheet" href="styles.css?v=20260615-6" />
+    <link rel="stylesheet" href="styles.css?v=20260615-4" />
   </head>
   <body>
     <div class="ambient ambient-one"></div>
@@ -69,18 +69,6 @@
               <option value="unmarked">未标记</option>
             </select>
           </label>
-          <label>
-            <span class="field-label">熟练度</span>
-            <select id="proficiencyFilter">
-              <option value="all">全部熟练度</option>
-              <option value="未学习">未学习</option><option value="初识">初识</option><option value="学习中">学习中</option>
-              <option value="易错">易错</option><option value="熟悉">熟悉</option><option value="已掌握">已掌握</option>
-            </select>
-          </label>
-          <label>
-            <span class="field-label">按雅思场景筛选</span>
-            <select id="tagFilter"><option value="all">全部雅思标签</option></select>
-          </label>
           <button class="resume-word-button" id="resumeWord" type="button">
             <span class="ui-icon icon-external" aria-hidden="true"></span>
             <b>跳至上次学习</b>
@@ -90,9 +78,7 @@
             <b>导出新单词</b>
           </button>
           <button class="library-tool-button" id="importLibrary" type="button"><b>导入词库</b></button>
-          <input class="hidden" id="importLibraryFile" type="file" accept=".csv,.xlsx,.xls,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" />
-          <button class="library-tool-button" id="downloadImportTemplate" type="button"><b>下载导入模板</b></button>
-          <button class="library-tool-button" id="openBulkPaste" type="button"><b>批量粘贴单词</b></button>
+          <input class="hidden" id="importLibraryFile" type="file" accept=".csv,text/csv" />
           <button class="library-tool-button" id="exportLibrary" type="button"><b>导出词库</b></button>
           <button class="library-tool-button" id="clearLibraryFilters" type="button"><b>清除筛选</b></button>
           <button class="add-word-button" id="openAddWord" type="button">
@@ -101,14 +87,6 @@
           </button>
         </div>
         <p class="wrong-view-note hidden" id="wrongViewNote">错词强化会优先展示你最近答错、查看答案或多次记不住的单词。选择错误原因后，系统会根据问题类型安排更有针对性的复习。</p>
-        <section class="wrong-insights hidden" id="wrongInsights">
-          <div><p class="eyebrow">错词画像</p><h3>错误原因分析</h3><p>根据你的错词记录，系统会统计主要错误原因，帮助你判断当前词汇问题集中在哪里。</p></div>
-          <div class="reason-stats" id="reasonStats"></div>
-          <div class="special-training">
-            <h3>专项强化</h3><p>你可以按错误原因进行专项训练，集中解决同一类词汇问题。</p>
-            <div class="special-training-grid" id="specialTrainingGrid"></div>
-          </div>
-        </section>
         <div class="library-summary"><span id="librarySummary">正在读取词库…</span><span>每页显示 20 个单词</span></div>
         <div class="word-table-wrap">
           <table class="word-table">
@@ -150,19 +128,9 @@
         <label><span>常用搭配</span><small>例如：significant increase。</small><input id="newWordCollocation" type="text" /></label>
         <label><span>例句</span><small>建议使用简单、可模仿、适合雅思写作或口语的句子。</small><textarea id="newWordExample" rows="2"></textarea></label>
         <label><span>同义替换</span><small>填写可以在雅思阅读和写作中替换使用的词。</small><input id="newWordSynonyms" type="text" /></label>
-        <label><span>雅思标签</span><small>可填写多个标签，用顿号、逗号或斜杠分隔。</small><input id="newWordTags" type="text" placeholder="Task 2 观点论证、学术场景" /></label>
         <p class="custom-word-note">自定义单词不会自动标注剑桥 CEFR 等级，避免与剑桥词典官方标注混淆。</p>
         <p class="word-dialog-message" id="addWordMessage"></p>
         <div class="word-dialog-actions"><button type="button" id="cancelAddWord">取消</button><button type="submit">新增单词</button></div>
-      </form>
-    </dialog>
-    <dialog class="word-dialog" id="bulkPasteDialog">
-      <form class="word-dialog-card" id="bulkPasteForm">
-        <p class="eyebrow">BULK IMPORT</p><h2>批量粘贴单词</h2>
-        <p>每行填写一个单词，使用制表符分隔英文单词、中文释义和雅思标签。至少填写前两项。</p>
-        <textarea id="bulkPasteText" rows="12" placeholder="significant	重要的；显著的	Task 1 数据描述、Task 2 观点论证"></textarea>
-        <p class="word-dialog-message" id="bulkPasteMessage"></p>
-        <div class="word-dialog-actions"><button type="button" id="cancelBulkPaste">取消</button><button type="submit">批量导入</button></div>
       </form>
     </dialog>
     <footer><span>WORDLOOM · CLOUD SYNC</span><a class="header-link" href="index.html">返回默写首页</a></footer>
@@ -172,7 +140,6 @@
     <script src="ielts-points.js?v=20260614-11"></script>
     <script src="pronunciation.js?v=20260614-11"></script>
     <script src="supabase-config.js?v=20260614-11"></script>
-    <script src="xlsx.full.min.js?v=0.18.5"></script>
-    <script src="cloud-sync.js?v=20260615-5" data-entry="library.js?v=20260615-5"></script>
+    <script src="cloud-sync.js?v=20260615-3" data-entry="library.js?v=20260615-3"></script>
   </body>
 </html>
