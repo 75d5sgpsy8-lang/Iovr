@@ -4,6 +4,14 @@ const ACTIVE_SESSION_KEY = "wordloom-active-session-v1";
 const DELETED_WORDS_KEY = "wordloom-deleted-words-v1";
 const CUSTOM_WORDS_KEY = "wordloom-custom-words-v1";
 const STAGE_NAMES = ["10 分钟巩固", "1 天复习", "3 天复习", "7 天复习", "14 天复习", "30 天复习", "60 天复习"];
+const ERROR_REASON_ADVICE = {
+  "拼写错误": "这个单词你知道意思，但拼写还不稳定。请重点观察字母顺序、双写字母和词尾变化，并重新默写 2-3 遍。",
+  "词义混淆": "这个单词容易和相近词混淆。请重点对比核心含义、使用场景和同义替换。",
+  "完全不会": "这个单词还没有形成记忆。请先看中文释义、例句和使用场景，再重新默写。",
+  "搭配不会": "你可能知道意思，但还不会自然使用。请重点记住常用搭配和例句。",
+  "发音不熟": "这个单词的发音还不稳定，可能影响听力识别和拼写。请先跟读，再默写。",
+  "一时想不起来": "这个单词不是完全不会，而是提取速度不够快。请缩短复习间隔，连续几天快速默写。",
+};
 const PAGE_SIZE = 20;
 const baseWords = window.WORDS || [];
 let customWords = loadCustomWords();
@@ -191,6 +199,7 @@ function clearLibraryFilters() {
   els.librarySearch.value = "";
   els.libraryStart.value = 1;
   els.libraryEnd.value = Math.max(...allWords.map((item) => item.id));
+  els.wrongReasonFilter.value = "all";
   document.querySelectorAll(".library-tab").forEach((button) => button.classList.toggle("active", button.dataset.libraryView === "all"));
   render();
 }
@@ -328,7 +337,13 @@ function results() {
     const studyText = pdfStudy ? [...pdfStudy.examples, ...pdfStudy.related, pdfStudy.parent].join(" ").toLowerCase() : "";
     const customText = [item.scene, item.collocation, item.example, item.synonyms].filter(Boolean).join(" ").toLowerCase();
     const matchesQuery = !query || item.word.toLowerCase().includes(query) || item.meaning.toLowerCase().includes(query) || studyText.includes(query) || customText.includes(query) || String(item.id) === query;
-    return item.id >= start && item.id <= end && matchesQuery && matchesView(item);
+    const state = wordState(item.id);
+    const reasonFilter = els.wrongReasonFilter.value;
+    const reasons = errorReasonsFor(state);
+    const matchesReason = view !== "wrong"
+      || reasonFilter === "all"
+      || (reasonFilter === "unmarked" ? reasons.length === 0 : reasons.includes(reasonFilter));
+    return item.id >= start && item.id <= end && matchesQuery && matchesReason && matchesView(item);
   });
   if (view === "wrong") {
     filtered.sort((a, b) => {
@@ -346,6 +361,14 @@ function results() {
 
 function detailBlock(label, value) {
   return value ? `<div class="study-block"><b>${label}</b><p>${escapeHtml(value)}</p></div>` : "";
+}
+
+function errorReasonsFor(state) {
+  const reasons = Object.entries(state?.errorReasons || {})
+    .filter(([, count]) => count > 0)
+    .sort((a, b) => b[1] - a[1])
+    .map(([reason]) => reason);
+  return reasons.length || !state?.lastErrorReason ? reasons : [state.lastErrorReason];
 }
 
 function studyCell(item) {
@@ -381,6 +404,19 @@ function studyCell(item) {
   </div>`;
 }
 
+function wrongReasonCell(state) {
+  const reasons = errorReasonsFor(state);
+  const reasonLabel = reasons.length > 1
+    ? `常见错误原因：${reasons.join(" / ")}`
+    : `错误原因：${reasons[0] || "未标记"}`;
+  const primaryReason = state?.lastErrorReason || reasons[0];
+  const advice = ERROR_REASON_ADVICE[primaryReason] || "建议结合中文释义、发音和例句重新完成一次独立默写。";
+  return `<div class="wrong-reason-card">
+    <strong>${escapeHtml(reasonLabel)}</strong>
+    <p>${escapeHtml(advice)}</p>
+  </div>`;
+}
+
 function render() {
   const wrongCount = words.filter((item) => wordState(item.id)?.wrong > 0).length;
   const dueCount = words.filter((item) => isDue(wordState(item.id))).length;
@@ -388,6 +424,8 @@ function render() {
   els.dueLibraryCount.textContent = dueCount;
   els.deletedLibraryCount.textContent = deletedIds.size;
   els.wrongSortField.classList.toggle("hidden", view !== "wrong");
+  els.wrongReasonField.classList.toggle("hidden", view !== "wrong");
+  els.wrongViewNote.classList.toggle("hidden", view !== "wrong");
   const filtered = results();
   const pages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   page = Math.min(page, pages);
@@ -399,7 +437,7 @@ function render() {
       <td><span class="cefr-badge ${window.wordCefrLevel(item) ? `level-${window.wordCefrLevel(item).toLowerCase()}` : "level-unmarked"}" title="剑桥词典不同释义可能对应多个 CEFR 等级">${window.wordCefrLabel(item)}</span></td>
       <td>${escapeHtml(item.meaning).replace(/\n/g, "<br>")}</td>
       <td>${escapeHtml(window.ieltsPointsFor(item, study[item.id]).pos)}</td>
-      <td>${studyCell(item)}</td>
+      <td>${view === "wrong" ? wrongReasonCell(state) : ""}${studyCell(item)}</td>
       <td><span class="table-stage ${state?.mastered ? "mastered" : ""}">${stageLabel(state)}</span></td>
       <td><span class="${wrong ? "wrong-count" : "zero-count"}">${wrong}</span></td>
       <td>${state?.nextReview ? relativeTime(state.nextReview) : "—"}</td>
@@ -427,7 +465,7 @@ function render() {
       ? `找到 ${filtered.length} 个到期复习单词，按到期时间排序`
       : view === "deleted"
         ? `找到 ${filtered.length} 个已隐藏单词；学习记录仍然保留`
-      : `找到 ${filtered.length} 个默写错误单词`;
+      : `找到 ${filtered.length} 个默写错误单词${els.wrongReasonFilter.value === "all" ? "" : ` · 筛选：${els.wrongReasonFilter.options[els.wrongReasonFilter.selectedIndex].text}`}`;
   els.libraryPage.textContent = `第 ${page} / ${pages} 页`;
   els.libraryJumpPage.max = pages;
   els.libraryJumpPage.value = page;
@@ -531,6 +569,7 @@ document.querySelectorAll(".library-tab").forEach((button) => button.addEventLis
 [els.librarySearch, els.libraryStart, els.libraryEnd].forEach((input) => input.addEventListener("input", () => { page = 1; render(); }));
 enhanceNumberInputs([els.libraryStart, els.libraryEnd, els.libraryJumpPage]);
 els.wrongSort.addEventListener("change", () => { page = 1; render(); });
+els.wrongReasonFilter.addEventListener("change", () => { page = 1; render(); });
 els.libraryPrev.addEventListener("click", () => { page -= 1; render(); });
 els.libraryNext.addEventListener("click", () => { page += 1; render(); });
 els.libraryJumpButton.addEventListener("click", jumpToPage);
