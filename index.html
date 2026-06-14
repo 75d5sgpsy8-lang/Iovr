@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#f4f0e8" />
     <title>IELTS Core Vocabulary</title>
-    <link rel="stylesheet" href="styles.css?v=20260614-7" />
+    <link rel="stylesheet" href="styles.css?v=20260614-8" />
   </head>
   <body>
     <div class="ambient ambient-one"></div>
@@ -137,7 +137,7 @@
             <div class="quiz-topline">
               <span id="quizProgress">01 / 20</span>
               <div class="progress-track"><i id="progressBar"></i></div>
-              <button class="sound-button" id="speakButton" type="button" title="播放免费真人读音" aria-label="播放免费真人读音"><span class="ui-icon icon-play" aria-hidden="true"></span></button>
+              <button class="sound-button hidden" id="speakButton" type="button" title="播放免费真人读音" aria-label="播放免费真人读音"><span class="ui-icon icon-play" aria-hidden="true"></span></button>
             </div>
             <div class="prompt-card">
             <div class="prompt-meta">
@@ -160,10 +160,8 @@
                 <button type="submit" id="checkButton">校验答案</button>
               </div>
             </form>
-            <div class="quiz-help-actions">
-              <button type="button" id="hintButton">查看提示</button>
-              <button type="button" id="revealAnswerButton">查看答案</button>
-            </div>
+            <div class="progressive-hint hidden" id="progressiveHint"></div>
+            <button class="question-next-button hidden" id="questionNextButton" type="button">下一个单词</button>
             <div class="error-reason-panel hidden" id="errorReasonPanel">
               <strong>这次错误的主要原因是：</strong>
               <div class="error-reason-options">
@@ -186,7 +184,7 @@
             <div class="result-score"><strong id="resultScore">0%</strong><span>独立正确率</span></div>
             <div class="result-grid">
               <div><strong id="resultCorrect">0</strong><span>独立答对</span></div>
-              <div><strong id="resultAssisted">0</strong><span>提示答对</span></div>
+              <div><strong id="resultAssisted">0</strong><span>回炉答对</span></div>
               <div><strong id="resultWrong">0</strong><span>回炉次数</span></div>
               <div><strong id="resultTime">0:00</strong><span>用时</span></div>
             </div>
@@ -209,7 +207,7 @@
         <div class="checkin-metrics">
           <article><span>连续打卡</span><strong id="checkinStreak">0 天</strong><small>连续完成每日学习任务</small></article>
           <article><span>累计学习</span><strong id="checkinTotal">0</strong><small>已完成的练习单词数</small></article>
-          <article><span>今日进度</span><strong id="checkinToday">0 / 20</strong><small>完成 20 个单词即可打卡</small></article>
+          <article><span>今日进度</span><strong id="checkinToday">0 / 60</strong><small>完成 60 个单词即可打卡</small></article>
         </div>
         <div class="checkin-history" id="checkinHistory"></div>
       </section>
