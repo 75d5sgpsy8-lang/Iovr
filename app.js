@@ -8,6 +8,7 @@ const STORAGE_KEY = "wordloom-progress-v1";
 const ACTIVE_SESSION_KEY = "wordloom-active-session-v1";
 const DELETED_WORDS_KEY = "wordloom-deleted-words-v1";
 const CUSTOM_WORDS_KEY = "wordloom-custom-words-v1";
+const DAILY_CHECKIN_GOAL = 60;
 const SPELLING_EQUIVALENT_GROUPS = [
   ["generalization", "generalisation"],
   ["specialization", "specialisation"],
@@ -281,8 +282,8 @@ function clearLearningRecords(event) {
 }
 
 function updateStats() {
-  const attempts = Object.values(progress.words).reduce((sum, item) => sum + (item.attempts || 0), 0);
-  const hits = Object.values(progress.words).reduce((sum, item) => sum + (item.correct || 0), 0);
+  const attempts = progress.sessions.reduce((sum, item) => sum + (item.total || 0), 0);
+  const hits = progress.sessions.reduce((sum, item) => sum + (item.correct || 0), 0);
   const now = Date.now();
   const states = Object.values(progress.words);
   const due = states.filter((item) => !item.mastered && item.nextReview && item.nextReview <= now);
@@ -322,27 +323,27 @@ function renderCheckin() {
     details.reviewCount += item.reviewCount || Math.max(0, (item.total || 0) - (item.newCount || 0));
     details.wrongCount += item.wrongCount || item.mistakes || 0;
     details.correct += item.correct || 0;
-    details.attempts += (item.correct || 0) + (item.assisted || 0) + (item.mistakes || 0);
+    details.attempts += item.total || 0;
     details.seconds += item.seconds || 0;
     dailyDetails.set(item.date, details);
   });
   const todayTotal = dailyTotals.get(dayKey()) || 0;
   let streak = 0;
   const cursor = new Date();
-  if ((dailyTotals.get(dayKey(cursor)) || 0) < 20) cursor.setDate(cursor.getDate() - 1);
-  while ((dailyTotals.get(dayKey(cursor)) || 0) >= 20) {
+  if ((dailyTotals.get(dayKey(cursor)) || 0) < DAILY_CHECKIN_GOAL) cursor.setDate(cursor.getDate() - 1);
+  while ((dailyTotals.get(dayKey(cursor)) || 0) >= DAILY_CHECKIN_GOAL) {
     streak += 1;
     cursor.setDate(cursor.getDate() - 1);
   }
   els.checkinStreak.textContent = `${streak} 天`;
   els.checkinTotal.textContent = [...dailyTotals.values()].reduce((sum, value) => sum + value, 0);
-  els.checkinToday.textContent = `${Math.min(todayTotal, 20)} / 20`;
+  els.checkinToday.textContent = `${Math.min(todayTotal, DAILY_CHECKIN_GOAL)} / ${DAILY_CHECKIN_GOAL}`;
   const rows = Array.from({ length: 7 }, (_, index) => {
     const date = new Date();
     date.setDate(date.getDate() - (6 - index));
     const total = dailyTotals.get(dayKey(date)) || 0;
     const details = dailyDetails.get(dayKey(date)) || { newCount: 0, reviewCount: 0, wrongCount: 0, correct: 0, attempts: 0, seconds: 0 };
-    const complete = total >= 20;
+    const complete = total >= DAILY_CHECKIN_GOAL;
     return `<tr class="${complete ? "complete" : ""}"><td>${date.getMonth() + 1}/${date.getDate()}</td><td>${details.newCount}</td><td>${details.reviewCount}</td><td>${details.wrongCount}</td><td>${details.attempts ? `${Math.round((details.correct / details.attempts) * 100)}%` : "—"}</td><td>${Math.round(details.seconds / 60)} 分钟</td><td>${complete ? "已完成" : "待完成"}</td></tr>`;
   }).join("");
   els.checkinHistory.innerHTML = `<table><thead><tr><th>日期</th><th>新词</th><th>复习</th><th>错词</th><th>独立正确率</th><th>学习用时</th><th>今日任务</th></tr></thead><tbody>${rows}</tbody></table>`;
@@ -489,6 +490,7 @@ function renderQuestion() {
   els.cefrBadge.className = `cefr-badge${cefr ? ` level-${cefr.toLowerCase()}` : " level-unmarked"}`;
   els.cefrBadge.title = cefr ? "剑桥词典不同释义可能对应多个 CEFR 等级" : "剑桥词典当前词条未提供 CEFR 等级";
   els.stageBadge.textContent = stageLabel(wordState(item.id));
+  els.cefrBadge.parentElement.classList.add("hidden");
   els.meaning.textContent = item.meaning;
   els.currentDictionaryLink.href = `https://dictionary.cambridge.org/dictionary/english-chinese-simplified/${encodeURIComponent(item.word)}`;
   els.currentDictionaryLink.classList.add("hidden");
@@ -496,15 +498,17 @@ function renderQuestion() {
   els.speakButton.classList.remove("hint-used");
   els.speakButton.classList.remove("pronunciation-missing");
   els.speakButton.classList.remove("pronunciation-ready", "pronunciation-loading");
-  els.speakButton.title = "播放免费真人读音；使用后本题计为提示答对";
+  els.speakButton.title = "播放免费真人读音";
   window.prepareHumanPronunciation?.(item.word);
   els.answerInput.value = "";
   els.answerInput.disabled = false;
   els.checkButton.textContent = "校验答案";
-  els.hintButton.disabled = false;
-  els.revealAnswerButton.disabled = false;
   els.feedback.className = "feedback";
   els.feedback.innerHTML = "";
+  els.progressiveHint.classList.add("hidden");
+  els.progressiveHint.innerHTML = "";
+  els.questionNextButton.classList.add("hidden");
+  els.questionNextButton.textContent = "下一个单词";
   els.nextReviewNotice.classList.add("hidden");
   els.nextReviewNotice.textContent = "";
   els.errorReasonPanel.classList.add("hidden");
@@ -519,7 +523,9 @@ function normalize(value) {
 
 function isAcceptedAnswer(answer, target) {
   const normalizedTarget = normalize(target);
-  return answer === normalizedTarget || SPELLING_EQUIVALENTS.get(normalizedTarget)?.includes(answer);
+  const canonical = (value) => normalize(value).replace(/[-\s]+/g, "");
+  return canonical(answer) === canonical(normalizedTarget)
+    || SPELLING_EQUIVALENTS.get(normalizedTarget)?.some((variant) => canonical(variant) === canonical(answer));
 }
 
 function escapeHtml(value) {
@@ -568,6 +574,39 @@ function pdfStudyFeedback(item) {
     <button type="button" class="study-speak-button" data-speak-text="${escapeHtml(item.word)}"><span class="ui-icon icon-play" aria-hidden="true"></span>朗读单词</button>
     ${examples}${related}
   </section>`;
+}
+
+function completeStudyFeedback(item) {
+  const content = study[item.id];
+  const point = window.ieltsPointsFor(item, content);
+  const examples = item.example
+    ? item.example
+    : content?.examples?.length
+      ? content.examples.join("；")
+      : "暂无匹配例句，可通过剑桥词典继续查询。";
+  const collocations = item.collocation || content?.related?.join("、") || point.family || "暂无匹配搭配。";
+  const synonyms = item.synonyms || content?.related?.join("、") || "暂无匹配同义替换。";
+  const scene = item.scene || point.examUse || "这个单词可用于雅思阅读、写作或口语中的相关表达。";
+  return `<section class="complete-study-card">
+    <div class="complete-study-heading"><span>单词学习内容</span><small>答对后解锁</small></div>
+    <dl>
+      <div><dt>正确单词</dt><dd class="correct-word">${escapeHtml(item.word)}</dd></div>
+      <div><dt>中文释义</dt><dd>${escapeHtml(item.meaning)}</dd></div>
+      <div><dt>词性</dt><dd>${escapeHtml(point.pos || "未标注")}</dd></div>
+      <div><dt>雅思场景</dt><dd>${escapeHtml(scene)}</dd></div>
+      <div><dt>常用搭配</dt><dd>${escapeHtml(collocations)}</dd></div>
+      <div><dt>例句</dt><dd>${escapeHtml(examples)}</dd></div>
+      <div><dt>同义替换</dt><dd>${escapeHtml(synonyms)}</dd></div>
+    </dl>
+  </section>${pdfStudyFeedback(item)}`;
+}
+
+function progressiveHintFor(item, misses) {
+  const letters = [...item.word].filter((character) => /[a-z]/i.test(character));
+  const count = letters.length;
+  if (misses === 1) return `<strong>还不对，再想一想。</strong><span>提示：这个单词共有 ${count} 个字母。</span>`;
+  if (misses === 2) return `<strong>还是不对，注意词性和拼写。</strong><span>提示：首字母是 “${escapeHtml(letters[0] || item.word[0])}”，共有 ${count} 个字母。</span>`;
+  return `<strong>这个单词还没有真正记住，请根据提示再默写一次。</strong><span>提示：首字母是 “${escapeHtml(letters[0] || item.word[0])}”，词尾是 “${escapeHtml(letters.at(-1) || item.word.at(-1))}”，共有 ${count} 个字母。</span>`;
 }
 
 function scheduleReview(item, isCorrect, deferRelearning = false, wasAssisted = false) {
@@ -627,65 +666,59 @@ function checkAnswer(event) {
   const item = session[current];
   const answer = normalize(els.answerInput.value);
   if (!answer) {
-    els.feedback.textContent = "请输入英文单词，再校验答案。";
-    els.feedback.className = "feedback wrong";
+    els.feedback.textContent = "请先输入英文单词。";
+    els.feedback.className = "feedback recall-note";
+    els.answerInput.focus();
     return;
   }
-  checked = true;
   const isCorrect = isAcceptedAnswer(answer, item.word);
   const usedSpellingVariant = isCorrect && answer !== normalize(item.word);
   if (isCorrect) {
-    if (usedPronunciationHint) {
+    checked = true;
+    const misses = sessionMisses.get(item.id) || 0;
+    const recallAssisted = misses > 0;
+    if (recallAssisted) {
       assisted += 1;
-      els.feedback.innerHTML = `<div class="answer-verdict">提示后答对。这个单词不会计入独立正确率，但会继续安排复习。<b>${escapeHtml(item.word)}</b>${usedSpellingVariant ? `（接受拼写变体：${escapeHtml(els.answerInput.value.trim())}）` : ""}</div>${pdfStudyFeedback(item)}`;
+      els.feedback.innerHTML = `<div class="answer-verdict">回答正确！现在可以查看这个单词的完整内容，并进入下一个单词。${usedSpellingVariant ? `（接受拼写变体：${escapeHtml(els.answerInput.value.trim())}）` : ""}</div>${completeStudyFeedback(item)}`;
       els.feedback.className = "feedback correct";
     } else {
       correct += 1;
-      els.feedback.innerHTML = `<div class="answer-verdict">回答正确！这个单词会进入下一轮复习计划。<b>${escapeHtml(item.word)}</b>${usedSpellingVariant ? `（接受拼写变体：${escapeHtml(els.answerInput.value.trim())}）` : ""}</div>${pdfStudyFeedback(item)}`;
+      els.feedback.innerHTML = `<div class="answer-verdict">${current === session.length - 1 ? "回答正确！本组单词已经全部完成。" : "回答正确！现在可以查看这个单词的完整内容，并进入下一个单词。"}${usedSpellingVariant ? `（接受拼写变体：${escapeHtml(els.answerInput.value.trim())}）` : ""}</div>${completeStudyFeedback(item)}`;
       els.feedback.className = "feedback correct";
     }
+    els.answerInput.disabled = true;
+    els.checkButton.classList.add("hidden");
+    els.questionNextButton.textContent = current === session.length - 1 ? "完成本组练习" : "下一个单词";
+    els.questionNextButton.classList.remove("hidden");
+    els.cefrBadge.parentElement.classList.remove("hidden");
+    els.progressiveHint.classList.add("hidden");
+    els.currentDictionaryLink.classList.remove("hidden");
+    els.speakButton.classList.remove("hidden");
+    const state = scheduleReview(item, true, false, recallAssisted);
+    els.nextReviewNotice.classList.remove("hidden");
+    els.nextReviewNotice.textContent = state.mastered
+      ? "已完成长期复习周期，进入长期掌握。"
+      : recallAssisted
+        ? "本题最终答对，但有错误尝试；已加入错词强化，并将在 10 分钟后再次复习。"
+        : `下一阶段：${stageLabel(state)}，${relativeTime(state.nextReview)}到期。`;
+    if (misses > 0) els.errorReasonPanel.classList.remove("hidden");
+    els.progressBar.style.width = `${((current + 1) / session.length) * 100}%`;
+    saveActiveSession(current + 1);
+    requestAnimationFrame(() => els.questionNextButton.focus());
   } else {
     mistakes += 1;
     const misses = (sessionMisses.get(item.id) || 0) + 1;
     sessionMisses.set(item.id, misses);
-    const willRetryThisSession = misses <= 2;
-    if (willRetryThisSession) session.splice(Math.min(session.length, current + 4), 0, item);
-    els.feedback.innerHTML = `<div class="answer-verdict">回答不正确。请先看正确答案，再重新默写一遍，加深记忆。正确答案是 <b>${escapeHtml(item.word)}</b>。</div>${pdfStudyFeedback(item)}`;
-    els.feedback.className = "feedback wrong";
+    scheduleReview(item, false);
+    els.feedback.innerHTML = "";
+    els.feedback.className = "feedback recall-note";
+    els.progressiveHint.innerHTML = progressiveHintFor(item, misses);
+    els.progressiveHint.classList.remove("hidden");
+    els.answerInput.value = "";
+    els.checkButton.textContent = "再次校验";
+    saveActiveSession(current);
+    requestAnimationFrame(() => els.answerInput.focus());
   }
-  els.quizProgress.textContent = `${String(current + 1).padStart(2, "0")} / ${String(session.length).padStart(2, "0")}`;
-  els.answerInput.disabled = true;
-  els.hintButton.disabled = true;
-  els.revealAnswerButton.disabled = true;
-  els.checkButton.textContent = current === session.length - 1 ? "查看结果" : "下一词";
-  els.progressBar.style.width = `${((current + 1) / session.length) * 100}%`;
-  const willRetryThisSession = !isCorrect && (sessionMisses.get(item.id) || 0) <= 2;
-  const state = scheduleReview(item, isCorrect, !isCorrect && !willRetryThisSession, usedPronunciationHint);
-  saveActiveSession(current + 1);
-  els.currentDictionaryLink.classList.remove("hidden");
-  els.speakButton.classList.remove("hidden");
-  els.nextReviewNotice.classList.toggle("hidden", isCorrect && usedPronunciationHint);
-  els.nextReviewNotice.textContent = isCorrect && usedPronunciationHint
-    ? ""
-    : isCorrect
-    ? state.mastered
-      ? "已完成长期复习周期，进入长期掌握。"
-      : state.recovery
-        ? "本轮已重新答对。10 分钟后进行错词重学，通过后恢复到降低后的复习阶段。"
-      : `下一阶段：${stageLabel(state)}，${relativeTime(state.nextReview)}到期。`
-    : willRetryThisSession
-      ? "将在最多间隔 3 题后重新出现。本轮最多重答两次；重新答对后，10 分钟再复习一次。"
-      : "本轮重答次数已达上限，10 分钟后重新学习，避免重复猜测削弱记忆。";
-}
-
-function revealCurrentAnswer() {
-  if (checked || !session[current]) return;
-  const item = session[current];
-  els.answerInput.value = "查看答案";
-  checkAnswer({ preventDefault() {} });
-  els.answerInput.value = item.word;
-  els.feedback.innerHTML = `<div class="answer-verdict">你选择了查看答案。这个单词会被加入重点复习列表。正确答案是 <b>${escapeHtml(item.word)}</b>。</div>${pdfStudyFeedback(item)}`;
-  els.errorReasonPanel.classList.remove("hidden");
 }
 
 function selectErrorReason(event) {
@@ -725,13 +758,12 @@ function finishSession() {
   saveProgress();
   els.quiz.classList.add("hidden");
   els.result.classList.remove("hidden");
-  const totalAttempts = correct + assisted + mistakes;
-  els.resultScore.textContent = `${totalAttempts ? Math.round((correct / totalAttempts) * 100) : 0}%`;
+  els.resultScore.textContent = `${initialTotal ? Math.round((correct / initialTotal) * 100) : 0}%`;
   els.resultCorrect.textContent = correct;
   els.resultAssisted.textContent = assisted;
   els.resultWrong.textContent = mistakes;
   els.resultTime.textContent = `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
-  const accuracy = totalAttempts ? correct / totalAttempts : 0;
+  const accuracy = initialTotal ? correct / initialTotal : 0;
   els.resultAdvice.textContent =
     mistakes === 0 && assisted === 0
       ? "本组全部通过。建议结束本轮，等待系统安排下一次间隔复习。"
@@ -765,7 +797,7 @@ async function speakCurrent() {
   if (!checked) {
     usedPronunciationHint = true;
     els.speakButton.classList.add("hint-used");
-    els.speakButton.title = "已使用读音提示，本题将计为提示答对";
+    els.speakButton.title = "已播放真人读音；首次答对仍计入独立正确率";
   }
 }
 
@@ -844,9 +876,8 @@ els.quickWrongButton.addEventListener("click", () => selectSource("wrong"));
 els.resultWrongButton.addEventListener("click", () => selectSource("wrong", true));
 els.returnHomeButton.addEventListener("click", returnToHome);
 els.answerForm.addEventListener("submit", checkAnswer);
+els.questionNextButton.addEventListener("click", nextQuestion);
 els.speakButton.addEventListener("click", speakCurrent);
-els.hintButton.addEventListener("click", speakCurrent);
-els.revealAnswerButton.addEventListener("click", revealCurrentAnswer);
 els.errorReasonPanel.addEventListener("click", selectErrorReason);
 els.quickDictionaryForm.addEventListener("submit", openQuickDictionary);
 els.feedback.addEventListener("click", (event) => {
