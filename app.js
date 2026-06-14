@@ -362,7 +362,7 @@ function updateEmptyStateForAvailability(count) {
     return;
   }
   els.emptyStateTitle.textContent = "今日任务";
-  els.emptyStateCopy.innerHTML = "<p>今天建议完成：</p><ul><li>新词学习：20 个</li><li>到期复习：按系统提醒完成</li><li>错词强化：优先处理最近答错的单词</li></ul><p>先完成今日任务，再考虑额外加练。坚持比一次背很多更重要。</p>";
+  els.emptyStateCopy.innerHTML = "<p>今天建议完成：</p><ul><li>新词学习：60 个</li><li>到期复习：按系统提醒完成</li><li>错词强化：优先处理最近答错的单词</li></ul><p>先完成今日任务，再考虑额外加练。坚持比一次背很多更重要。</p>";
 }
 
 function poolForSource() {
