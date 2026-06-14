@@ -1357,9 +1357,24 @@ footer { margin-top: 18px; }
 .word-table td:nth-child(11) {
   vertical-align: middle;
 }
+.word-table th:nth-child(2),
+.word-table td:nth-child(2),
+.word-table th:nth-child(5),
+.word-table td:nth-child(5) {
+  text-align: center;
+}
+.word-table td:nth-child(2),
+.word-table td:nth-child(4),
+.word-table td:nth-child(5) {
+  vertical-align: middle;
+}
+.word-table th:nth-child(4),
+.word-table td:nth-child(4) {
+  text-align: left;
+}
 .word-speak {
   width: 100%;
-  justify-content: space-between;
+  justify-content: center;
 }
 .dictionary-link.compact,
 .delete-word-button,
