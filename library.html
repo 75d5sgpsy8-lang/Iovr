@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#f4f0e8" />
     <title>IELTS Core Vocabulary · 词库中心</title>
-    <link rel="stylesheet" href="styles.css?v=20260614-5" />
+    <link rel="stylesheet" href="styles.css?v=20260614-6" />
   </head>
   <body>
     <div class="ambient ambient-one"></div>
@@ -22,6 +22,7 @@
       <section class="library-hero">
         <p class="eyebrow">VOCABULARY INTELLIGENCE</p>
         <h1>词库中心</h1>
+        <p>在这里管理你的雅思词汇库。你可以搜索单词、查看释义、雅思考点、例句和学习记录，也可以新增或导出新词。</p>
       </section>
 
       <section class="library-center" id="libraryCenter">
@@ -33,7 +34,7 @@
           <div class="library-tabs">
             <button class="library-tab active" data-library-view="all">全部单词查询</button>
             <button class="library-tab" data-library-view="wrong">
-              默写错误单词 <span id="wrongLibraryCount">0</span>
+              错词强化 <span id="wrongLibraryCount">0</span>
             </button>
             <button class="library-tab" data-library-view="due">
               到期复习 <span id="dueLibraryCount">0</span>
@@ -44,7 +45,7 @@
           </div>
         </div>
         <div class="library-tools">
-          <label class="library-search"><span class="ui-icon icon-search" aria-hidden="true"></span><input id="librarySearch" type="search" placeholder="搜索英文、中文释义或序号…" /></label>
+          <label class="library-search"><span class="ui-icon icon-search" aria-hidden="true"></span><input id="librarySearch" type="search" placeholder="搜索英文单词、中文释义或标签" /></label>
           <label><span class="field-label">起始序号</span><input id="libraryStart" type="number" min="1" value="1" inputmode="numeric" step="1" /></label>
           <label><span class="field-label">结束序号</span><input id="libraryEnd" type="number" min="1" value="5083" inputmode="numeric" step="1" /></label>
           <label id="wrongSortField" class="hidden">
@@ -85,7 +86,7 @@
             <thead><tr><th>序号</th><th>单词</th><th>剑桥 CEFR</th><th>中文释义</th><th>雅思考点与学习内容</th><th>记忆阶段</th><th>错误次数</th><th>剑桥英汉词典</th><th>操作</th></tr></thead>
             <tbody id="wordTableBody"></tbody>
           </table>
-          <div class="library-empty hidden" id="libraryEmpty">没有找到符合条件的单词。</div>
+          <div class="library-empty hidden" id="libraryEmpty"><strong>没有搜索结果</strong><span>没有找到符合条件的单词。请尝试更换关键词，或检查筛选条件。</span></div>
         </div>
         <div class="pagination">
           <button id="libraryPrev"><span class="ui-icon icon-arrow-left" aria-hidden="true"></span><span>上一页</span></button>
@@ -101,8 +102,8 @@
         <p class="eyebrow">CUSTOM VOCABULARY</p>
         <h2>新增单词</h2>
         <p>新增单词将同步保存到云端，并进入新词学习与智能计划。</p>
-        <label><span>英文单词</span><input id="newWordText" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" required /></label>
-        <label><span>中文释义</span><textarea id="newWordMeaning" rows="3" required></textarea></label>
+        <label><span>英文单词</span><small>填写需要记忆的英文单词。</small><input id="newWordText" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" required /></label>
+        <label><span>中文释义</span><small>填写核心中文意思，建议简洁准确。</small><textarea id="newWordMeaning" rows="3" required></textarea></label>
         <p class="custom-word-note">自定义单词不会自动标注剑桥 CEFR 等级，避免与剑桥词典官方标注混淆。</p>
         <p class="word-dialog-message" id="addWordMessage"></p>
         <div class="word-dialog-actions"><button type="button" id="cancelAddWord">取消</button><button type="submit">新增单词</button></div>
