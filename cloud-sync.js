@@ -161,18 +161,18 @@
 
   async function syncNow() {
     if (!configured()) {
-      status("offline", "云同步未配置");
+      status("offline", "云端同步未配置");
       return;
     }
     if (inFlight) return inFlight;
-    status("syncing", "正在云同步…");
+    status("syncing", "正在同步学习记录…");
     inFlight = (async () => {
       const merged = mergePayload(localPayload(), await cloudRead());
       await cloudWrite(merged);
       apply(merged);
-      status("online", "已同步到云端");
+      status("online", "同步成功，已保存最新进度 · 已同步到云端");
     })().catch(() => {
-      status("offline", "云同步失败");
+      status("offline", "同步失败，请检查网络后重试");
     }).finally(() => {
       inFlight = null;
     });
