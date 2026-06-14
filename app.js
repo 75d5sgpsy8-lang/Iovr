@@ -309,6 +309,43 @@ function updateStats() {
       : upcoming
         ? `当前没有到期任务，下一次复习将在${relativeTime(upcoming.nextReview)}开始。`
         : "今天没有到期复习任务。你可以学习一组新词，或进入错词本进行巩固。";
+  renderCheckin();
+}
+
+function renderCheckin() {
+  const dailyTotals = new Map();
+  const dailyDetails = new Map();
+  progress.sessions.forEach((item) => {
+    dailyTotals.set(item.date, (dailyTotals.get(item.date) || 0) + (item.total || 0));
+    const details = dailyDetails.get(item.date) || { newCount: 0, reviewCount: 0, wrongCount: 0, correct: 0, attempts: 0, seconds: 0 };
+    details.newCount += item.newCount || 0;
+    details.reviewCount += item.reviewCount || Math.max(0, (item.total || 0) - (item.newCount || 0));
+    details.wrongCount += item.wrongCount || item.mistakes || 0;
+    details.correct += item.correct || 0;
+    details.attempts += (item.correct || 0) + (item.assisted || 0) + (item.mistakes || 0);
+    details.seconds += item.seconds || 0;
+    dailyDetails.set(item.date, details);
+  });
+  const todayTotal = dailyTotals.get(dayKey()) || 0;
+  let streak = 0;
+  const cursor = new Date();
+  if ((dailyTotals.get(dayKey(cursor)) || 0) < 20) cursor.setDate(cursor.getDate() - 1);
+  while ((dailyTotals.get(dayKey(cursor)) || 0) >= 20) {
+    streak += 1;
+    cursor.setDate(cursor.getDate() - 1);
+  }
+  els.checkinStreak.textContent = `${streak} 天`;
+  els.checkinTotal.textContent = [...dailyTotals.values()].reduce((sum, value) => sum + value, 0);
+  els.checkinToday.textContent = `${Math.min(todayTotal, 20)} / 20`;
+  const rows = Array.from({ length: 7 }, (_, index) => {
+    const date = new Date();
+    date.setDate(date.getDate() - (6 - index));
+    const total = dailyTotals.get(dayKey(date)) || 0;
+    const details = dailyDetails.get(dayKey(date)) || { newCount: 0, reviewCount: 0, wrongCount: 0, correct: 0, attempts: 0, seconds: 0 };
+    const complete = total >= 20;
+    return `<tr class="${complete ? "complete" : ""}"><td>${date.getMonth() + 1}/${date.getDate()}</td><td>${details.newCount}</td><td>${details.reviewCount}</td><td>${details.wrongCount}</td><td>${details.attempts ? `${Math.round((details.correct / details.attempts) * 100)}%` : "—"}</td><td>${Math.round(details.seconds / 60)} 分钟</td><td>${complete ? "已完成" : "待完成"}</td></tr>`;
+  }).join("");
+  els.checkinHistory.innerHTML = `<table><thead><tr><th>日期</th><th>新词</th><th>复习</th><th>错词</th><th>独立正确率</th><th>学习用时</th><th>今日任务</th></tr></thead><tbody>${rows}</tbody></table>`;
 }
 
 function updateEmptyStateForAvailability(count) {
@@ -366,6 +403,13 @@ function updateAvailable() {
     button.disabled = source === "review";
   });
   const requestedCount = Math.max(1, Number(els.wordCount.value) || 1);
+  const startLabels = {
+    smart: "开始今日任务",
+    all: "开始学习新词",
+    review: "开始到期复习",
+    wrong: "开始错词强化",
+  };
+  els.startButton.querySelector("span").textContent = startLabels[source];
   if (source === "smart") {
     const plan = smartPool(requestedCount);
     const dueWrong = plan.filter((item) => wordState(item.id)?.nextReview <= Date.now() && wordState(item.id)?.wrong > 0).length;
@@ -378,14 +422,14 @@ function updateAvailable() {
     els.smartPlanPreview.classList.remove("hidden");
     els.smartNewLimitField.classList.remove("hidden");
     els.modeControls.classList.remove("field-disabled");
-    els.wordCountLabel.textContent = "本组词数上限";
-    els.quotaHint.textContent = "只处理已到期任务，再按上限补充新词；填 0 可只复习";
+    els.wordCountLabel.textContent = "本组最多学习";
+    els.quotaHint.textContent = "系统会优先复习，再按上限补充新词；新词填 0 可只复习";
     return;
   }
   els.smartPlanPreview.classList.add("hidden");
   els.smartNewLimitField.classList.add("hidden");
   els.modeControls.classList.toggle("field-disabled", source === "review");
-  els.wordCountLabel.textContent = "本组词数";
+  els.wordCountLabel.textContent = "本组最多学习";
   els.quotaHint.textContent = source === "review" ? "严格按照复习到期时间安排" : source === "wrong" ? "集中巩固尚未掌握的错词" : "从未学习的单词中安排本组任务";
   const count = poolForSource().length;
   const effectiveMode = source === "review" ? "sequential" : mode;
@@ -439,9 +483,9 @@ function renderQuestion() {
   usedPronunciationHint = false;
   els.quizProgress.textContent = `${String(current + 1).padStart(2, "0")} / ${String(session.length).padStart(2, "0")}`;
   els.progressBar.style.width = `${(current / session.length) * 100}%`;
-  els.promptIndex.textContent = `单词序号 #${String(item.id).padStart(4, "0")}`;
+  els.promptIndex.textContent = `当前单词 #${String(item.id).padStart(4, "0")}`;
   const cefr = window.wordCefrLevel(item);
-  els.cefrBadge.textContent = cefr ? `剑桥 CEFR ${window.wordCefrLabel(item)}` : "剑桥 CEFR 未标注";
+  els.cefrBadge.textContent = cefr ? `剑桥 CEFR ${window.wordCefrLabel(item)}` : "剑桥 CEFR：未标注";
   els.cefrBadge.className = `cefr-badge${cefr ? ` level-${cefr.toLowerCase()}` : " level-unmarked"}`;
   els.cefrBadge.title = cefr ? "剑桥词典不同释义可能对应多个 CEFR 等级" : "剑桥词典当前词条未提供 CEFR 等级";
   els.stageBadge.textContent = stageLabel(wordState(item.id));
@@ -463,6 +507,8 @@ function renderQuestion() {
   els.feedback.innerHTML = "";
   els.nextReviewNotice.classList.add("hidden");
   els.nextReviewNotice.textContent = "";
+  els.errorReasonPanel.classList.add("hidden");
+  els.errorReasonPanel.querySelectorAll("button").forEach((button) => button.classList.remove("selected"));
   saveActiveSession();
   els.answerInput.focus();
 }
@@ -591,7 +637,7 @@ function checkAnswer(event) {
   if (isCorrect) {
     if (usedPronunciationHint) {
       assisted += 1;
-      els.feedback.innerHTML = `<div class="answer-verdict">回答正确！系统已记录本次作答，并会继续安排复习。<b>${escapeHtml(item.word)}</b>${usedSpellingVariant ? `（接受拼写变体：${escapeHtml(els.answerInput.value.trim())}）` : ""}</div>${pdfStudyFeedback(item)}`;
+      els.feedback.innerHTML = `<div class="answer-verdict">提示后答对。这个单词不会计入独立正确率，但会继续安排复习。<b>${escapeHtml(item.word)}</b>${usedSpellingVariant ? `（接受拼写变体：${escapeHtml(els.answerInput.value.trim())}）` : ""}</div>${pdfStudyFeedback(item)}`;
       els.feedback.className = "feedback correct";
     } else {
       correct += 1;
@@ -639,6 +685,20 @@ function revealCurrentAnswer() {
   checkAnswer({ preventDefault() {} });
   els.answerInput.value = item.word;
   els.feedback.innerHTML = `<div class="answer-verdict">你选择了查看答案。这个单词会被加入重点复习列表。正确答案是 <b>${escapeHtml(item.word)}</b>。</div>${pdfStudyFeedback(item)}`;
+  els.errorReasonPanel.classList.remove("hidden");
+}
+
+function selectErrorReason(event) {
+  const button = event.target.closest("[data-error-reason]");
+  const item = session[current];
+  if (!button || !item) return;
+  const state = wordState(item.id);
+  if (!state) return;
+  state.errorReasons = state.errorReasons && typeof state.errorReasons === "object" ? state.errorReasons : {};
+  state.errorReasons[button.dataset.errorReason] = (state.errorReasons[button.dataset.errorReason] || 0) + 1;
+  state.lastErrorReason = button.dataset.errorReason;
+  els.errorReasonPanel.querySelectorAll("button").forEach((itemButton) => itemButton.classList.toggle("selected", itemButton === button));
+  saveProgress();
 }
 
 function nextQuestion() {
@@ -653,7 +713,14 @@ function nextQuestion() {
 function finishSession() {
   const seconds = Math.round((Date.now() - startedAt) / 1000);
   clearActiveSession();
-  progress.sessions.push({ date: dayKey(), total: initialTotal, correct, assisted, mistakes, seconds });
+  const sourceCounts = session.slice(0, initialTotal).reduce((counts, item) => {
+    const state = wordState(item.id);
+    if (!state || state.attempts <= 1) counts.newCount += 1;
+    else if (state.wrong > 0) counts.wrongCount += 1;
+    else counts.reviewCount += 1;
+    return counts;
+  }, { newCount: 0, reviewCount: 0, wrongCount: 0 });
+  progress.sessions.push({ date: dayKey(), total: initialTotal, correct, assisted, mistakes, seconds, source, ...sourceCounts });
   progress.sessions = progress.sessions.slice(-100);
   saveProgress();
   els.quiz.classList.add("hidden");
@@ -780,6 +847,7 @@ els.answerForm.addEventListener("submit", checkAnswer);
 els.speakButton.addEventListener("click", speakCurrent);
 els.hintButton.addEventListener("click", speakCurrent);
 els.revealAnswerButton.addEventListener("click", revealCurrentAnswer);
+els.errorReasonPanel.addEventListener("click", selectErrorReason);
 els.quickDictionaryForm.addEventListener("submit", openQuickDictionary);
 els.feedback.addEventListener("click", (event) => {
   const button = event.target.closest("[data-speak-text]");
