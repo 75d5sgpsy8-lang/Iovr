@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#f4f0e8" />
     <title>IELTS Core Vocabulary · 词库中心</title>
-    <link rel="stylesheet" href="styles.css?v=20260614-4" />
+    <link rel="stylesheet" href="styles.css?v=20260614-5" />
   </head>
   <body>
     <div class="ambient ambient-one"></div>
@@ -14,7 +14,7 @@
       <a class="brand brand-text-only" href="index.html"><span>IELTS Core Vocabulary</span></a>
       <div class="header-actions">
         <a class="header-link active" href="library.html">词库中心</a>
-        <a class="back-link" href="index.html">← 返回默写首页</a>
+        <a class="back-link" href="index.html"><span class="ui-icon icon-arrow-left" aria-hidden="true"></span><span>返回默写首页</span></a>
       </div>
     </header>
 
@@ -44,7 +44,7 @@
           </div>
         </div>
         <div class="library-tools">
-          <label class="library-search"><span>⌕</span><input id="librarySearch" type="search" placeholder="搜索英文、中文释义或序号…" /></label>
+          <label class="library-search"><span class="ui-icon icon-search" aria-hidden="true"></span><input id="librarySearch" type="search" placeholder="搜索英文、中文释义或序号…" /></label>
           <label><span class="field-label">起始序号</span><input id="libraryStart" type="number" min="1" value="1" inputmode="numeric" step="1" /></label>
           <label><span class="field-label">结束序号</span><input id="libraryEnd" type="number" min="1" value="5083" inputmode="numeric" step="1" /></label>
           <label id="wrongSortField" class="hidden">
@@ -56,15 +56,15 @@
             </select>
           </label>
           <button class="resume-word-button" id="resumeWord" type="button">
-            <span>↗</span>
+            <span class="ui-icon icon-external" aria-hidden="true"></span>
             <b>跳至上次学习</b>
           </button>
           <button class="export-new-words-button" id="exportNewWords" type="button">
-            <span>↓</span>
+            <span class="ui-icon icon-download" aria-hidden="true"></span>
             <b>导出新单词</b>
           </button>
           <button class="add-word-button" id="openAddWord" type="button">
-            <span>＋</span>
+            <span class="ui-icon icon-plus" aria-hidden="true"></span>
             <b>新增单词</b>
           </button>
         </div>
@@ -88,11 +88,11 @@
           <div class="library-empty hidden" id="libraryEmpty">没有找到符合条件的单词。</div>
         </div>
         <div class="pagination">
-          <button id="libraryPrev">← 上一页</button>
+          <button id="libraryPrev"><span class="ui-icon icon-arrow-left" aria-hidden="true"></span><span>上一页</span></button>
           <span id="libraryPage">第 1 / 1 页</span>
           <label class="page-jump"><span>跳至</span><input id="libraryJumpPage" type="number" min="1" value="1" inputmode="numeric" step="1" aria-label="跳转页码" /><span>页</span></label>
           <button id="libraryJumpButton" type="button">跳转</button>
-          <button id="libraryNext">下一页 →</button>
+          <button id="libraryNext"><span>下一页</span><span class="ui-icon icon-arrow-right" aria-hidden="true"></span></button>
         </div>
       </section>
     </main>
