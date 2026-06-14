@@ -3,7 +3,6 @@
     progress: "wordloom-progress-v1",
     deleted: "wordloom-deleted-words-v1",
     custom: "wordloom-custom-words-v1",
-    tags: "wordloom-word-tags-v1",
   };
   const META_KEY = "wordloom-cloud-meta-v1";
   const entry = document.currentScript?.dataset.entry;
@@ -84,7 +83,6 @@
       progress: read(KEYS.progress, null),
       deleted: read(KEYS.deleted, null),
       custom: read(KEYS.custom, null),
-      tags: read(KEYS.tags, null),
       meta: meta(),
     };
   }
@@ -108,12 +106,10 @@
       progress,
       deleted,
       custom: mergeCustom(local?.custom, cloud?.custom),
-      tags: { ...(cloud?.tags || {}), ...(local?.tags || {}) },
       meta: {
         progress: Math.max(localMeta.progress || 0, cloudMeta.progress || 0),
         deleted: Math.max(localMeta.deleted || 0, cloudMeta.deleted || 0),
         custom: Math.max(localMeta.custom || 0, cloudMeta.custom || 0),
-        tags: Math.max(localMeta.tags || 0, cloudMeta.tags || 0),
       },
     };
   }
