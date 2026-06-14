@@ -12,7 +12,9 @@ const study = window.WORD_STUDY || {};
 let progress = loadProgress();
 let deletedIds = loadDeletedIds();
 let words = availableWords();
-let view = "all";
+let view = ["all", "wrong", "due", "deleted"].includes(new URLSearchParams(window.location.search).get("view"))
+  ? new URLSearchParams(window.location.search).get("view")
+  : "all";
 let page = 1;
 let highlightedWordId = null;
 
@@ -275,6 +277,17 @@ function render() {
   }).join("");
   filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE).slice(0, 8).forEach((item) => window.prepareHumanPronunciation?.(item.word));
   els.libraryEmpty.classList.toggle("hidden", filtered.length > 0);
+  if (!filtered.length) {
+    els.libraryEmpty.innerHTML = view === "wrong"
+      ? "<strong>目前没有错词</strong><span>继续保持，也可以开始学习一组新词。</span>"
+      : view === "due"
+        ? "<strong>今天没有到期复习任务</strong><span>你可以选择学习新词，或复盘之前的错词。</span>"
+        : view === "deleted"
+          ? "<strong>没有已隐藏单词</strong><span>当前词库中的单词均正常显示。</span>"
+          : els.librarySearch.value.trim()
+            ? "<strong>没有搜索结果</strong><span>没有找到符合条件的单词。请尝试更换关键词，或检查筛选条件。</span>"
+            : "<strong>你的词库里还没有单词</strong><span>先添加一批雅思高频词，开始第一组默写吧。</span>";
+  }
   els.librarySummary.textContent = view === "all"
     ? `找到 ${filtered.length} 个单词`
     : view === "due"
@@ -433,6 +446,7 @@ window.addEventListener("storage", (event) => {
 });
 els.libraryEnd.max = Math.max(...allWords.map((item) => item.id));
 els.libraryEnd.value = els.libraryEnd.max;
+document.querySelectorAll(".library-tab").forEach((button) => button.classList.toggle("active", button.dataset.libraryView === view));
 render();
 
 window.setInterval(render, 60e3);
