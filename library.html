@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#f4f0e8" />
     <title>IELTS Core Vocabulary · 词库中心</title>
-    <link rel="stylesheet" href="styles.css?v=20260615-1" />
+    <link rel="stylesheet" href="styles.css?v=20260615-4" />
   </head>
   <body>
     <div class="ambient ambient-one"></div>
@@ -56,6 +56,19 @@
               <option value="id">按单词序号</option>
             </select>
           </label>
+          <label id="wrongReasonField" class="hidden">
+            <span class="field-label">错误类型</span>
+            <select id="wrongReasonFilter">
+              <option value="all">全部错词</option>
+              <option value="拼写错误">拼写错误</option>
+              <option value="词义混淆">词义混淆</option>
+              <option value="完全不会">完全不会</option>
+              <option value="搭配不会">搭配不会</option>
+              <option value="发音不熟">发音不熟</option>
+              <option value="一时想不起来">一时想不起来</option>
+              <option value="unmarked">未标记</option>
+            </select>
+          </label>
           <button class="resume-word-button" id="resumeWord" type="button">
             <span class="ui-icon icon-external" aria-hidden="true"></span>
             <b>跳至上次学习</b>
@@ -73,6 +86,7 @@
             <b>新增单词</b>
           </button>
         </div>
+        <p class="wrong-view-note hidden" id="wrongViewNote">错词强化会优先展示你最近答错、查看答案或多次记不住的单词。选择错误原因后，系统会根据问题类型安排更有针对性的复习。</p>
         <div class="library-summary"><span id="librarySummary">正在读取词库…</span><span>每页显示 20 个单词</span></div>
         <div class="word-table-wrap">
           <table class="word-table">
@@ -126,6 +140,6 @@
     <script src="ielts-points.js?v=20260614-11"></script>
     <script src="pronunciation.js?v=20260614-11"></script>
     <script src="supabase-config.js?v=20260614-11"></script>
-    <script src="cloud-sync.js?v=20260614-14" data-entry="library.js?v=20260614-14"></script>
+    <script src="cloud-sync.js?v=20260615-3" data-entry="library.js?v=20260615-3"></script>
   </body>
 </html>
