@@ -348,13 +348,13 @@ function closeResetDialog() {
   els.resetDialog.close();
 }
 
-function clearLearningRecords(event) {
+async function clearLearningRecords(event) {
   event.preventDefault();
   if (els.resetConfirmInput.value.trim() !== "清除") return;
-  localStorage.removeItem(STORAGE_KEY);
-  window.wordloomSyncSave?.(STORAGE_KEY);
+  const emptyProgress = { protocolVersion: 3, words: {}, sessions: [] };
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(emptyProgress));
   clearActiveSession();
-  progress = { protocolVersion: 3, words: {}, sessions: [] };
+  progress = emptyProgress;
   session = [];
   current = 0;
   checked = false;
@@ -373,6 +373,9 @@ function clearLearningRecords(event) {
   closeResetDialog();
   updateStats();
   updateAvailable();
+  els.protocolMessage.textContent = "正在清除本地与云端学习记录…";
+  await window.wordloomSyncClearProgress?.();
+  els.protocolMessage.textContent = "学习记录已清除；词库内容仍然保留。";
 }
 
 function updateStats() {
