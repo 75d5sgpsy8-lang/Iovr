@@ -35,8 +35,99 @@ let usedPronunciationHint = false;
 let initialTotal = 0;
 let startedAt = 0;
 let sessionMisses = new Map();
+let sessionOrigins = new Map();
+let canonicalProgressIds = new Map();
 let progress = loadProgress();
 const study = window.WORD_STUDY || {};
+
+function wordIdentity(value) {
+  return String(value || "").trim().toLowerCase().replace(/[’]/g, "'").replace(/\s+/g, " ");
+}
+
+function rebuildCanonicalProgressIds(items) {
+  canonicalProgressIds = new Map();
+  const firstIds = new Map();
+  items.forEach((item) => {
+    const identity = wordIdentity(item.word);
+    if (!firstIds.has(identity)) firstIds.set(identity, item.id);
+    canonicalProgressIds.set(String(item.id), firstIds.get(identity));
+  });
+}
+
+function progressIdFor(itemOrId) {
+  const id = typeof itemOrId === "object" ? itemOrId?.id : itemOrId;
+  return canonicalProgressIds.get(String(id)) ?? id;
+}
+
+function uniqueLearningWords(items) {
+  const seen = new Set();
+  return items.filter((item) => {
+    const id = String(progressIdFor(item));
+    if (seen.has(id)) return false;
+    seen.add(id);
+    return true;
+  });
+}
+
+function mergeHistoricalStates(states) {
+  const latest = states.reduce((chosen, state) => (
+    (state?.lastAttempt || 0) >= (chosen?.lastAttempt || 0) ? state : chosen
+  ), {});
+  const merged = { ...latest };
+  ["attempts", "correct", "wrong", "lapses", "assisted"].forEach((field) => {
+    merged[field] = states.reduce((sum, state) => sum + (Number(state?.[field]) || 0), 0);
+  });
+  merged.lastAttempt = Math.max(0, ...states.map((state) => Number(state?.lastAttempt) || 0));
+  merged.lastWrongAt = Math.max(0, ...states.map((state) => Number(state?.lastWrongAt) || 0)) || undefined;
+  merged.errorReasons = {};
+  states.forEach((state) => {
+    Object.entries(state?.errorReasons || {}).forEach(([reason, count]) => {
+      merged.errorReasons[reason] = (merged.errorReasons[reason] || 0) + (Number(count) || 0);
+    });
+  });
+  const history = states.flatMap((state) => Array.isArray(state?.errorReasonHistory) ? state.errorReasonHistory : []);
+  merged.errorReasonHistory = [...new Map(history.map((entry) => [`${entry?.attemptKey || ""}:${entry?.reason || ""}:${entry?.at || ""}`, entry])).values()]
+    .sort((a, b) => (a?.at || 0) - (b?.at || 0))
+    .slice(-50);
+  const pending = states
+    .filter((state) => !state?.mastered && state?.nextReview)
+    .map((state) => Number(state.nextReview))
+    .filter(Number.isFinite);
+  if (pending.length) {
+    merged.mastered = false;
+    merged.nextReview = Math.min(...pending);
+  }
+  return merged;
+}
+
+function consolidateDuplicateProgress(items) {
+  const groups = new Map();
+  items.forEach((item) => {
+    const canonicalId = progressIdFor(item);
+    const group = groups.get(canonicalId) || [];
+    group.push(item.id);
+    groups.set(canonicalId, group);
+  });
+  let changed = false;
+  groups.forEach((ids, canonicalId) => {
+    const states = ids.map((id) => progress.words[id]).filter((state) => state && !state.mergedInto);
+    if (!states.length) return;
+    if (states.length > 1 || !progress.words[canonicalId]) {
+      progress.words[canonicalId] = mergeHistoricalStates(states);
+      changed = true;
+    }
+    ids.forEach((id) => {
+      if (String(id) !== String(canonicalId) && progress.words[id]?.mergedInto !== canonicalId) {
+        progress.words[id] = { mergedInto: canonicalId };
+        changed = true;
+      }
+    });
+  });
+  if (changed) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(progress));
+    window.wordloomSyncSave?.(STORAGE_KEY);
+  }
+}
 
 function loadProgress() {
   try {
@@ -84,6 +175,7 @@ function activeSessionSnapshot(nextCurrent = current) {
     initialTotal,
     startedAt,
     sessionMisses: Object.fromEntries(sessionMisses),
+    sessionOrigins: Object.fromEntries(sessionOrigins),
   };
 }
 
@@ -127,7 +219,8 @@ function restoreActiveSession() {
   mistakes = Number(stored.mistakes) || 0;
   initialTotal = Number(stored.initialTotal) || session.length;
   startedAt = Number(stored.startedAt) || Date.now();
-  sessionMisses = new Map(Object.entries(stored.sessionMisses || {}).map(([id, count]) => [Number(id), Number(count) || 0]));
+  sessionMisses = new Map(Object.entries(stored.sessionMisses || {}).map(([id, count]) => [id, Number(count) || 0]));
+  sessionOrigins = new Map(Object.entries(stored.sessionOrigins || {}));
   checked = false;
   usedPronunciationHint = false;
   els.emptyState.classList.add("hidden");
@@ -168,7 +261,7 @@ function dayKey(date = new Date()) {
 }
 
 function wordState(id) {
-  const state = progress.words[id];
+  const state = progress.words[progressIdFor(id)];
   if (!state) return null;
   if (typeof state.stage !== "number") state.stage = -1;
   state.mastered = Boolean(state.mastered);
@@ -242,7 +335,7 @@ function updateCurrentDateTime() {
 }
 
 function openResetDialog() {
-  const learnedWords = Object.keys(progress.words).length;
+  const learnedWords = Object.values(progress.words).filter((state) => !state?.mergedInto).length;
   const sessions = progress.sessions.length;
   els.resetImpact.textContent = `即将清除：${learnedWords} 个已学习单词、${sessions} 组练习记录。`;
   els.resetConfirmInput.value = "";
@@ -272,6 +365,7 @@ function clearLearningRecords(event) {
   initialTotal = 0;
   startedAt = 0;
   sessionMisses = new Map();
+  sessionOrigins = new Map();
   window.stopHumanPronunciation?.();
   els.quiz.classList.add("hidden");
   els.result.classList.add("hidden");
@@ -285,7 +379,7 @@ function updateStats() {
   const attempts = progress.sessions.reduce((sum, item) => sum + (item.total || 0), 0);
   const hits = progress.sessions.reduce((sum, item) => sum + (item.correct || 0), 0);
   const now = Date.now();
-  const states = Object.values(progress.words);
+  const states = Object.values(progress.words).filter((state) => !state?.mergedInto);
   const due = states.filter((item) => !item.mastered && item.nextReview && item.nextReview <= now);
   const overdue = due.filter((item) => now - item.nextReview >= 864e5);
   const learning = states.filter((item) => !item.mastered && item.attempts > 0);
@@ -319,9 +413,9 @@ function renderCheckin() {
   progress.sessions.forEach((item) => {
     dailyTotals.set(item.date, (dailyTotals.get(item.date) || 0) + (item.total || 0));
     const details = dailyDetails.get(item.date) || { newCount: 0, reviewCount: 0, wrongCount: 0, correct: 0, attempts: 0, seconds: 0 };
-    details.newCount += item.newCount || 0;
-    details.reviewCount += item.reviewCount || Math.max(0, (item.total || 0) - (item.newCount || 0));
-    details.wrongCount += item.wrongCount || item.mistakes || 0;
+    details.newCount += item.newCount ?? 0;
+    details.reviewCount += item.reviewCount ?? Math.max(0, (item.total || 0) - (item.newCount || 0));
+    details.wrongCount += item.wrongCount ?? item.mistakes ?? 0;
     details.correct += item.correct || 0;
     details.attempts += item.total || 0;
     details.seconds += item.seconds || 0;
@@ -368,7 +462,7 @@ function updateEmptyStateForAvailability(count) {
 function poolForSource() {
   const start = Math.min(Number(els.wordStart.value) || 1, Number(els.wordEnd.value) || 1);
   const end = Math.max(Number(els.wordStart.value) || 1, Number(els.wordEnd.value) || 1);
-  let pool = words.filter((item) => item.id >= start && item.id <= end);
+  let pool = uniqueLearningWords(words.filter((item) => item.id >= start && item.id <= end));
   if (source === "all") pool = pool.filter((item) => !wordState(item.id));
   if (source === "wrong") pool = pool.filter((item) => wordState(item.id)?.wrong > 0 && !wordState(item.id)?.mastered);
   if (source === "review") {
@@ -382,7 +476,7 @@ function poolForSource() {
 function smartPool(count) {
   const start = Math.min(Number(els.wordStart.value) || 1, Number(els.wordEnd.value) || 1);
   const end = Math.max(Number(els.wordStart.value) || 1, Number(els.wordEnd.value) || 1);
-  const range = words.filter((item) => item.id >= start && item.id <= end);
+  const range = uniqueLearningWords(words.filter((item) => item.id >= start && item.id <= end));
   const due = range
     .filter((item) => wordState(item.id)?.nextReview <= Date.now() && !wordState(item.id)?.mastered)
     .sort((a, b) => {
@@ -464,6 +558,16 @@ function startSession() {
   }
   if (!session.length) return;
   initialTotal = session.length;
+  const now = Date.now();
+  sessionOrigins = new Map(session.map((item) => {
+    const state = wordState(item.id);
+    const origin = !state
+      ? "new"
+      : source === "wrong" || (source === "smart" && state.wrong > 0 && state.nextReview <= now)
+        ? "wrong"
+        : "review";
+    return [String(progressIdFor(item)), origin];
+  }));
   current = 0;
   correct = 0;
   assisted = 0;
@@ -681,7 +785,7 @@ function scheduleReview(item, isCorrect, deferRelearning = false, wasAssisted = 
     state.nextReview = Date.now() + (deferRelearning ? REVIEW_INTERVALS[0] : 0);
   }
   state.lastAttempt = Date.now();
-  progress.words[item.id] = state;
+  progress.words[progressIdFor(item)] = state;
   saveProgress();
   return state;
 }
@@ -706,7 +810,8 @@ function checkAnswer(event) {
   if (isCorrect) {
     checked = true;
     applyRecallState("correct");
-    const misses = sessionMisses.get(item.id) || 0;
+    const itemKey = String(progressIdFor(item));
+    const misses = sessionMisses.get(itemKey) || 0;
     const recallAssisted = misses > 0;
     if (recallAssisted) {
       assisted += 1;
@@ -732,8 +837,9 @@ function checkAnswer(event) {
     requestAnimationFrame(() => els.questionNextButton.focus());
   } else {
     mistakes += 1;
-    const misses = (sessionMisses.get(item.id) || 0) + 1;
-    sessionMisses.set(item.id, misses);
+    const itemKey = String(progressIdFor(item));
+    const misses = (sessionMisses.get(itemKey) || 0) + 1;
+    sessionMisses.set(itemKey, misses);
     scheduleReview(item, false);
     applyRecallState(misses >= 3 ? "wrong_3" : `wrong_${misses}`);
     els.progressiveHint.innerHTML = progressiveHintFor(item, misses);
@@ -750,11 +856,22 @@ function selectErrorReason(event) {
   if (!button || !item) return;
   const state = wordState(item.id);
   if (!state) return;
+  const misses = sessionMisses.get(String(progressIdFor(item))) || 0;
+  const attemptKey = `${startedAt}:${progressIdFor(item)}:${misses}`;
+  const previousReason = state.lastErrorReasonAttemptKey === attemptKey ? state.lastErrorReason : null;
   state.errorReasons = state.errorReasons && typeof state.errorReasons === "object" ? state.errorReasons : {};
-  state.errorReasons[button.dataset.errorReason] = (state.errorReasons[button.dataset.errorReason] || 0) + 1;
+  if (previousReason && previousReason !== button.dataset.errorReason) {
+    state.errorReasons[previousReason] = Math.max(0, (state.errorReasons[previousReason] || 0) - 1);
+  }
+  if (previousReason !== button.dataset.errorReason) {
+    state.errorReasons[button.dataset.errorReason] = (state.errorReasons[button.dataset.errorReason] || 0) + 1;
+  }
   state.lastErrorReason = button.dataset.errorReason;
+  state.lastErrorReasonAttemptKey = attemptKey;
+  state.lastErrorReasonAt = Date.now();
   state.errorReasonHistory = Array.isArray(state.errorReasonHistory) ? state.errorReasonHistory : [];
-  state.errorReasonHistory.push({ reason: button.dataset.errorReason, at: Date.now() });
+  state.errorReasonHistory = state.errorReasonHistory.filter((entry) => entry?.attemptKey !== attemptKey);
+  state.errorReasonHistory.push({ reason: button.dataset.errorReason, at: Date.now(), attemptKey });
   state.errorReasonHistory = state.errorReasonHistory.slice(-50);
   state.lastWrongAt = state.lastWrongAt || Date.now();
   state.mastered = false;
@@ -779,13 +896,13 @@ function finishSession() {
   const seconds = Math.round((Date.now() - startedAt) / 1000);
   clearActiveSession();
   const sourceCounts = session.slice(0, initialTotal).reduce((counts, item) => {
-    const state = wordState(item.id);
-    if (!state || state.attempts <= 1) counts.newCount += 1;
-    else if (state.wrong > 0) counts.wrongCount += 1;
+    const origin = sessionOrigins.get(String(progressIdFor(item))) || "review";
+    if (origin === "new") counts.newCount += 1;
+    else if (origin === "wrong") counts.wrongCount += 1;
     else counts.reviewCount += 1;
     return counts;
   }, { newCount: 0, reviewCount: 0, wrongCount: 0 });
-  progress.sessions.push({ date: dayKey(), total: initialTotal, correct, assisted, mistakes, seconds, source, ...sourceCounts });
+  progress.sessions.push({ id: crypto.randomUUID?.() || `${Date.now()}-${Math.random()}`, date: dayKey(), total: initialTotal, correct, assisted, mistakes, seconds, source, ...sourceCounts });
   progress.sessions = progress.sessions.slice(-100);
   saveProgress();
   els.quiz.classList.add("hidden");
@@ -930,6 +1047,8 @@ updateCurrentDateTime();
 
 const deletedIds = deletedWordIds();
 const completeWords = [...(window.WORDS || []), ...customWords()];
+rebuildCanonicalProgressIds(completeWords);
+consolidateDuplicateProgress(completeWords);
 words = completeWords.filter((item) => !deletedIds.has(item.id));
 if (words.length) {
   els.wordEnd.max = Math.max(...completeWords.map((item) => item.id));
