@@ -132,11 +132,14 @@
     const localMeta = local?.meta || {};
     const localProgressTime = localMeta.progress || 0;
     const cloudProgressTime = cloudMeta.progress || 0;
-    const progress = local?.progress == null && localProgressTime > cloudProgressTime
+    const latestProgressReset = Math.max(localMeta.progressReset || 0, cloudMeta.progressReset || 0);
+    const localProgress = latestProgressReset && latestProgressReset >= localProgressTime ? null : local?.progress;
+    const cloudProgress = latestProgressReset && latestProgressReset >= cloudProgressTime ? null : cloud?.progress;
+    const progress = localProgress == null && localProgressTime > cloudProgressTime
       ? null
-      : cloud?.progress == null && cloudProgressTime > localProgressTime
+      : cloudProgress == null && cloudProgressTime > localProgressTime
         ? null
-        : mergeProgress(local?.progress, cloud?.progress);
+        : mergeProgress(localProgress, cloudProgress);
     const deleted = local?.deleted == null
       ? cloud?.deleted
       : cloud?.deleted == null
@@ -148,6 +151,7 @@
       custom: mergeCustom(local?.custom, cloud?.custom),
       meta: {
         progress: Math.max(localMeta.progress || 0, cloudMeta.progress || 0),
+        progressReset: latestProgressReset,
         deleted: Math.max(localMeta.deleted || 0, cloudMeta.deleted || 0),
         custom: Math.max(localMeta.custom || 0, cloudMeta.custom || 0),
       },
@@ -226,7 +230,19 @@
     syncNow();
   }
 
+  async function clearProgress() {
+    if (inFlight) await inFlight;
+    const value = meta();
+    const changedAt = Date.now();
+    value.progress = changedAt;
+    value.progressReset = changedAt;
+    localStorage.setItem(KEYS.progress, JSON.stringify({ protocolVersion: 3, words: {}, sessions: [] }));
+    localStorage.setItem(META_KEY, JSON.stringify(value));
+    return syncNow();
+  }
+
   window.wordloomSyncSave = save;
+  window.wordloomSyncClearProgress = clearProgress;
   window.wordloomSyncNow = syncNow;
   window.wordloomSyncReady = syncNow();
 
