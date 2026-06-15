@@ -49,17 +49,57 @@
     localStorage.setItem(META_KEY, JSON.stringify(value));
   }
 
+  function mergeWordStates(localState, cloudState) {
+    if (!localState) return cloudState;
+    if (!cloudState) return localState;
+    const latest = (localState?.lastAttempt || 0) >= (cloudState?.lastAttempt || 0) ? localState : cloudState;
+    const other = latest === localState ? cloudState : localState;
+    const merged = { ...other, ...latest };
+    ["attempts", "correct", "wrong", "lapses", "assisted"].forEach((field) => {
+      merged[field] = Math.max(Number(localState?.[field]) || 0, Number(cloudState?.[field]) || 0);
+    });
+    merged.lastAttempt = Math.max(Number(localState?.lastAttempt) || 0, Number(cloudState?.lastAttempt) || 0);
+    merged.lastWrongAt = Math.max(Number(localState?.lastWrongAt) || 0, Number(cloudState?.lastWrongAt) || 0) || undefined;
+    merged.errorReasons = {};
+    const reasons = new Set([...Object.keys(cloudState?.errorReasons || {}), ...Object.keys(localState?.errorReasons || {})]);
+    reasons.forEach((reason) => {
+      merged.errorReasons[reason] = Math.max(Number(cloudState?.errorReasons?.[reason]) || 0, Number(localState?.errorReasons?.[reason]) || 0);
+    });
+    const history = [...(cloudState?.errorReasonHistory || []), ...(localState?.errorReasonHistory || [])];
+    merged.errorReasonHistory = [...new Map(history.map((entry) => [`${entry?.attemptKey || ""}:${entry?.reason || ""}:${entry?.at || ""}`, entry])).values()]
+      .sort((a, b) => (a?.at || 0) - (b?.at || 0))
+      .slice(-50);
+    const latestReasonState = (localState?.lastErrorReasonAt || 0) >= (cloudState?.lastErrorReasonAt || 0) ? localState : cloudState;
+    if (latestReasonState?.lastErrorReason) {
+      merged.lastErrorReason = latestReasonState.lastErrorReason;
+      merged.lastErrorReasonAt = latestReasonState.lastErrorReasonAt;
+      merged.lastErrorReasonAttemptKey = latestReasonState.lastErrorReasonAttemptKey;
+    }
+    return merged;
+  }
+
   function mergeProgress(local, cloud) {
     const result = { ...(cloud || {}), ...(local || {}) };
     const words = { ...(cloud?.words || {}) };
     for (const [id, state] of Object.entries(local?.words || {})) {
       const existing = words[id];
-      if (!existing || (state?.lastAttempt || 0) >= (existing?.lastAttempt || 0)) words[id] = state;
+      if (!existing) {
+        words[id] = state;
+        continue;
+      }
+      if (state?.mergedInto || existing?.mergedInto) {
+        const target = state?.mergedInto || existing.mergedInto;
+        const pendingState = state?.mergedInto ? existing : state;
+        if (pendingState && !pendingState.mergedInto) words[target] = mergeWordStates(pendingState, words[target]);
+        words[id] = { mergedInto: target };
+        continue;
+      }
+      words[id] = mergeWordStates(state, existing);
     }
     const sessions = [];
     const seen = new Set();
     for (const session of [...(cloud?.sessions || []), ...(local?.sessions || [])]) {
-      const marker = JSON.stringify(session);
+      const marker = session?.id || JSON.stringify(session);
       if (!seen.has(marker)) {
         seen.add(marker);
         sessions.push(session);
