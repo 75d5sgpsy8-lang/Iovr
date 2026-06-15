@@ -6,6 +6,7 @@ const REVIEW_INTERVALS = [10 * 60e3, 864e5, 3 * 864e5, 7 * 864e5, 14 * 864e5, 30
 const STAGE_NAMES = ["10 分钟巩固", "1 天复习", "3 天复习", "7 天复习", "14 天复习", "30 天复习", "60 天复习"];
 const STORAGE_KEY = "wordloom-progress-v1";
 const ACTIVE_SESSION_KEY = "wordloom-active-session-v1";
+const CLOUD_META_KEY = "wordloom-cloud-meta-v1";
 const DELETED_WORDS_KEY = "wordloom-deleted-words-v1";
 const CUSTOM_WORDS_KEY = "wordloom-custom-words-v1";
 const DAILY_CHECKIN_GOAL = 60;
@@ -195,6 +196,11 @@ function clearActiveSession() {
 function readActiveSession() {
   try {
     const stored = JSON.parse(localStorage.getItem(ACTIVE_SESSION_KEY));
+    const progressReset = Number(JSON.parse(localStorage.getItem(CLOUD_META_KEY))?.progressReset) || 0;
+    if (stored?.savedAt && progressReset >= stored.savedAt) {
+      clearActiveSession();
+      return null;
+    }
     return stored && Array.isArray(stored.wordIds) ? stored : null;
   } catch {
     return null;
@@ -374,8 +380,10 @@ async function clearLearningRecords(event) {
   updateStats();
   updateAvailable();
   els.protocolMessage.textContent = "正在清除本地与云端学习记录…";
-  await window.wordloomSyncClearProgress?.();
-  els.protocolMessage.textContent = "学习记录已清除；词库内容仍然保留。";
+  const cloudCleared = await window.wordloomSyncClearProgress?.();
+  els.protocolMessage.textContent = cloudCleared === false
+    ? "本地学习记录已清除，但云端同步失败；请联网后点击右下角同步状态重试。"
+    : "学习记录已清除；词库内容仍然保留。";
 }
 
 function updateStats() {
