@@ -14,10 +14,13 @@ const ERROR_REASON_ADVICE = {
 };
 const PAGE_SIZE = 20;
 const baseWords = window.WORDS || [];
+let canonicalProgressIds = new Map();
 let customWords = loadCustomWords();
 let allWords = combinedWords();
 const study = window.WORD_STUDY || {};
 let progress = loadProgress();
+rebuildCanonicalProgressIds(allWords);
+consolidateDuplicateProgress(allWords);
 let deletedIds = loadDeletedIds();
 let words = availableWords();
 let view = ["all", "wrong", "due", "deleted"].includes(new URLSearchParams(window.location.search).get("view"))
@@ -53,6 +56,104 @@ function loadCustomWords() {
   } catch {
     return [];
   }
+}
+
+function wordIdentity(value) {
+  return String(value || "").trim().toLowerCase().replace(/[’]/g, "'").replace(/\s+/g, " ");
+}
+
+function rebuildCanonicalProgressIds(items) {
+  canonicalProgressIds = new Map();
+  const firstIds = new Map();
+  items.forEach((item) => {
+    const identity = wordIdentity(item.word);
+    if (!firstIds.has(identity)) firstIds.set(identity, item.id);
+    canonicalProgressIds.set(String(item.id), firstIds.get(identity));
+  });
+}
+
+function progressIdFor(itemOrId) {
+  const id = typeof itemOrId === "object" ? itemOrId?.id : itemOrId;
+  return canonicalProgressIds.get(String(id)) ?? id;
+}
+
+function uniqueLearningWords(items) {
+  const seen = new Set();
+  return items.filter((item) => {
+    const id = String(progressIdFor(item));
+    if (seen.has(id)) return false;
+    seen.add(id);
+    return true;
+  });
+}
+
+function mergeHistoricalStates(states) {
+  const latest = states.reduce((chosen, state) => (
+    (state?.lastAttempt || 0) >= (chosen?.lastAttempt || 0) ? state : chosen
+  ), {});
+  const merged = { ...latest };
+  ["attempts", "correct", "wrong", "lapses", "assisted"].forEach((field) => {
+    merged[field] = states.reduce((sum, state) => sum + (Number(state?.[field]) || 0), 0);
+  });
+  merged.lastAttempt = Math.max(0, ...states.map((state) => Number(state?.lastAttempt) || 0));
+  merged.lastWrongAt = Math.max(0, ...states.map((state) => Number(state?.lastWrongAt) || 0)) || undefined;
+  merged.errorReasons = {};
+  states.forEach((state) => {
+    Object.entries(state?.errorReasons || {}).forEach(([reason, count]) => {
+      merged.errorReasons[reason] = (merged.errorReasons[reason] || 0) + (Number(count) || 0);
+    });
+  });
+  const history = states.flatMap((state) => Array.isArray(state?.errorReasonHistory) ? state.errorReasonHistory : []);
+  merged.errorReasonHistory = [...new Map(history.map((entry) => [`${entry?.attemptKey || ""}:${entry?.reason || ""}:${entry?.at || ""}`, entry])).values()]
+    .sort((a, b) => (a?.at || 0) - (b?.at || 0))
+    .slice(-50);
+  const pending = states.filter((state) => !state?.mastered && state?.nextReview).map((state) => Number(state.nextReview)).filter(Number.isFinite);
+  if (pending.length) {
+    merged.mastered = false;
+    merged.nextReview = Math.min(...pending);
+  }
+  return merged;
+}
+
+function consolidateDuplicateProgress(items) {
+  const groups = new Map();
+  items.forEach((item) => {
+    const canonicalId = progressIdFor(item);
+    const ids = groups.get(canonicalId) || [];
+    ids.push(item.id);
+    groups.set(canonicalId, ids);
+  });
+  let changed = false;
+  groups.forEach((ids, canonicalId) => {
+    const states = ids.map((id) => progress.words[id]).filter((state) => state && !state.mergedInto);
+    if (!states.length) return;
+    if (states.length > 1 || !progress.words[canonicalId]) {
+      progress.words[canonicalId] = mergeHistoricalStates(states);
+      changed = true;
+    }
+    ids.forEach((id) => {
+      if (String(id) !== String(canonicalId) && progress.words[id]?.mergedInto !== canonicalId) {
+        progress.words[id] = { mergedInto: canonicalId };
+        changed = true;
+      }
+    });
+  });
+  if (changed) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(progress));
+    window.wordloomSyncSave?.(STORAGE_KEY);
+  }
+}
+
+function stableCustomId(word, items = allWords) {
+  let hash = 2166136261;
+  for (const character of wordIdentity(word)) {
+    hash ^= character.charCodeAt(0);
+    hash = Math.imul(hash, 16777619);
+  }
+  let id = 10000 + ((hash >>> 0) % 900000);
+  const occupied = new Map(items.map((item) => [item.id, wordIdentity(item.word)]));
+  while (occupied.has(id) && occupied.get(id) !== wordIdentity(word)) id += 1;
+  return id;
 }
 
 function combinedWords() {
@@ -163,14 +264,14 @@ async function importLibraryFile(event) {
     synonyms: indexOf("同义替换"),
   };
   const known = new Set(allWords.map((item) => item.word.toLowerCase()));
-  let nextId = Math.max(0, ...allWords.map((item) => item.id)) + 1;
   let added = 0;
   rows.forEach((row) => {
     const word = (row[wordIndex] || "").trim().toLowerCase().replace(/\s+/g, " ");
     const meaning = (row[meaningIndex] || "").trim();
     if (!word || !meaning || known.has(word)) return;
+    const id = stableCustomId(word, [...allWords, ...customWords]);
     customWords.push({
-      id: nextId++,
+      id,
       page: null,
       word,
       meaning,
@@ -185,6 +286,7 @@ async function importLibraryFile(event) {
   });
   saveCustomWords();
   allWords = combinedWords();
+  rebuildCanonicalProgressIds(allWords);
   words = availableWords();
   els.libraryEnd.max = Math.max(...allWords.map((item) => item.id));
   els.libraryEnd.value = els.libraryEnd.max;
@@ -255,7 +357,7 @@ function addCustomWord(event) {
     els.addWordMessage.textContent = "该单词已存在于词库中。";
     return;
   }
-  const id = Math.max(0, ...allWords.map((item) => item.id)) + 1;
+  const id = stableCustomId(word);
   const item = {
     id, page: null, word, meaning, custom: true,
     scene: els.newWordScene.value.trim(),
@@ -266,9 +368,10 @@ function addCustomWord(event) {
   customWords.push(item);
   saveCustomWords();
   allWords = combinedWords();
+  rebuildCanonicalProgressIds(allWords);
   words = availableWords();
-  els.libraryEnd.max = id;
-  els.libraryEnd.value = id;
+  els.libraryEnd.max = Math.max(...allWords.map((wordItem) => wordItem.id));
+  els.libraryEnd.value = els.libraryEnd.max;
   closeAddWordDialog();
   view = "all";
   document.querySelectorAll(".library-tab").forEach((button) => button.classList.toggle("active", button.dataset.libraryView === "all"));
@@ -279,7 +382,7 @@ function addCustomWord(event) {
 }
 
 function wordState(id) {
-  const state = progress.words?.[id];
+  const state = progress.words?.[progressIdFor(id)];
   if (!state) return null;
   if (typeof state.stage !== "number") state.stage = -1;
   return state;
@@ -332,7 +435,7 @@ function results() {
   const start = Math.min(Number(els.libraryStart.value) || 1, Number(els.libraryEnd.value) || words.length);
   const end = Math.max(Number(els.libraryStart.value) || 1, Number(els.libraryEnd.value) || words.length);
   const sourceWords = view === "deleted" ? allWords : words;
-  const filtered = sourceWords.filter((item) => {
+  let filtered = sourceWords.filter((item) => {
     const pdfStudy = study[item.id];
     const studyText = pdfStudy ? [...pdfStudy.examples, ...pdfStudy.related, pdfStudy.parent].join(" ").toLowerCase() : "";
     const customText = [item.scene, item.collocation, item.example, item.synonyms].filter(Boolean).join(" ").toLowerCase();
@@ -345,6 +448,7 @@ function results() {
       || (reasonFilter === "unmarked" ? reasons.length === 0 : reasons.includes(reasonFilter));
     return item.id >= start && item.id <= end && matchesQuery && matchesReason && matchesView(item);
   });
+  if (view === "wrong" || view === "due") filtered = uniqueLearningWords(filtered);
   if (view === "wrong") {
     filtered.sort((a, b) => {
       const aState = wordState(a.id);
@@ -418,7 +522,7 @@ function wrongReasonCell(state) {
 }
 
 function renderWrongReasonStats() {
-  const wrongWords = words.filter((item) => wordState(item.id)?.wrong > 0);
+  const wrongWords = uniqueLearningWords(words).filter((item) => wordState(item.id)?.wrong > 0);
   const reasons = Object.keys(ERROR_REASON_ADVICE);
   const counts = Object.fromEntries(reasons.map((reason) => [reason, 0]));
   let unmarked = 0;
@@ -436,8 +540,9 @@ function renderWrongReasonStats() {
 }
 
 function render() {
-  const wrongCount = words.filter((item) => wordState(item.id)?.wrong > 0).length;
-  const dueCount = words.filter((item) => isDue(wordState(item.id))).length;
+  const learningWords = uniqueLearningWords(words);
+  const wrongCount = learningWords.filter((item) => wordState(item.id)?.wrong > 0).length;
+  const dueCount = learningWords.filter((item) => isDue(wordState(item.id))).length;
   els.wrongLibraryCount.textContent = wrongCount;
   els.dueLibraryCount.textContent = dueCount;
   els.deletedLibraryCount.textContent = deletedIds.size;
@@ -630,13 +735,18 @@ els.wordTableBody.addEventListener("click", (event) => {
   if (wordButton) speak(wordButton.dataset.word, wordButton);
 });
 window.addEventListener("storage", (event) => {
-  if (event.key === STORAGE_KEY) progress = loadProgress();
+  if (event.key === STORAGE_KEY) {
+    progress = loadProgress();
+    consolidateDuplicateProgress(allWords);
+  }
   else if (event.key === DELETED_WORDS_KEY) {
     deletedIds = loadDeletedIds();
     words = availableWords();
   } else if (event.key === CUSTOM_WORDS_KEY) {
     customWords = loadCustomWords();
     allWords = combinedWords();
+    rebuildCanonicalProgressIds(allWords);
+    consolidateDuplicateProgress(allWords);
     words = availableWords();
     els.libraryEnd.max = Math.max(...allWords.map((item) => item.id));
   } else return;
