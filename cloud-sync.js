@@ -206,7 +206,7 @@
   async function syncNow() {
     if (!configured()) {
       status("offline", "云端同步未配置");
-      return;
+      return false;
     }
     if (inFlight) return inFlight;
     status("syncing", "正在同步学习记录…");
@@ -215,8 +215,10 @@
       await cloudWrite(merged);
       apply(merged);
       status("online", "同步成功，已保存最新进度 · 已同步到云端");
+      return true;
     })().catch(() => {
       status("offline", "同步失败，请检查网络后重试");
+      return false;
     }).finally(() => {
       inFlight = null;
     });
