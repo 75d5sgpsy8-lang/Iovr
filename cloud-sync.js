@@ -177,13 +177,11 @@
   function headers(extra = {}) {
     const result = {
       apikey: config.anonKey,
+      Authorization: `Bearer ${config.anonKey}`,
       "x-sync-id": config.syncId,
       "Content-Type": "application/json",
       ...extra,
     };
-    if (!String(config.anonKey).startsWith("sb_publishable_")) {
-      result.Authorization = `Bearer ${config.anonKey}`;
-    }
     return result;
   }
 
